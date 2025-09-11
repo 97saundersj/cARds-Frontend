@@ -29,10 +29,46 @@ export function ViewCard({}: ViewCardProps) {
 
   const unityConfig = getUnityConfig();
 
-  const onUnityLoadedCallback = React.useCallback((instance: any) => {
-    sendCardTextToUnity(instance);
-    setUnityLoadError(false);
+  const cardDataRef = React.useRef<UnityCardData>(cardData);
+
+  // Update ref whenever cardData changes
+  React.useEffect(() => {
+    cardDataRef.current = cardData;
+  }, [cardData]);
+
+  const sendCardTextToUnity = React.useCallback((instance: any) => {
+    const currentData = cardDataRef.current;
+    console.log("Sending data to Unity:", currentData);
+    if (
+      instance &&
+      (currentData.cardTop || currentData.cardMiddle || currentData.cardBottom)
+    ) {
+      try {
+        instance.SendMessage(
+          "Card",
+          "UpdateCardText",
+          JSON.stringify(currentData)
+        );
+        console.log("Data sent to Unity successfully");
+      } catch (error) {
+        console.error("Failed to send data to Unity:", error);
+      }
+    } else {
+      console.log("No data to send to Unity or Unity instance not available");
+    }
   }, []);
+
+  const onUnityLoadedCallback = React.useCallback(
+    (instance: any) => {
+      console.log("Unity loaded, sending initial data");
+      // Send data after a small delay to ensure Unity is fully ready
+      setTimeout(() => {
+        sendCardTextToUnity(instance);
+      }, 100);
+      setUnityLoadError(false);
+    },
+    [sendCardTextToUnity]
+  );
 
   const { unityInstance, isUnityLoaded, isLoading, canvasRef } = useUnity({
     unityUrl: unityConfig.unityUrl,
@@ -68,14 +104,13 @@ export function ViewCard({}: ViewCardProps) {
     });
   }, [searchParams]);
 
-  const sendCardTextToUnity = (instance: any) => {
-    if (
-      instance &&
-      (cardData.cardTop || cardData.cardMiddle || cardData.cardBottom)
-    ) {
-      instance.SendMessage("Card", "UpdateCardText", JSON.stringify(cardData));
+  // Send data to Unity whenever cardData changes and Unity is loaded
+  React.useEffect(() => {
+    if (isUnityLoaded && unityInstance) {
+      console.log("Card data changed, sending to Unity");
+      sendCardTextToUnity(unityInstance);
     }
-  };
+  }, [cardData, isUnityLoaded, unityInstance, sendCardTextToUnity]);
 
   const handleViewCardClick = () => {
     setShowInstructions(true);

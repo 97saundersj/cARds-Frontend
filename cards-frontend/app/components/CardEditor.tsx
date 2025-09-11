@@ -170,7 +170,11 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
         cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
     });
 
-    navigate(`/view-card?${params.toString()}`);
+    window.open(
+      `/view-card?${params.toString()}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const handleCloseModal = () => {
