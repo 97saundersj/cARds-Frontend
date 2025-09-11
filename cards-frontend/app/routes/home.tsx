@@ -1,13 +1,17 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { CardEditor } from "../components/CardEditor";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "AR Greeting Card Generator" },
+    {
+      name: "description",
+      content:
+        "Create your own web based Augmented Reality greeting cards for any occasion!",
+    },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <CardEditor />;
 }
