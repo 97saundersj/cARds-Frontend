@@ -5,8 +5,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import type { CardData, CardEditorProps } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
-import { LandingPageForm } from "./forms/LandingPageForm";
-import { ARCardForm } from "./forms/ARCardForm";
 import { CardLinkModal } from "./modals/CardLinkModal";
 import { SharedStyles } from "./ui/SharedStyles";
 import { getUnityConfig } from "../config/unity";
@@ -27,10 +25,6 @@ const storage = getStorage(app);
 
 export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
   const navigate = useNavigate();
-  const unityConfig = getUnityConfig();
-
-  console.log("🎨 CardEditor: Component initialized");
-  console.log("🎨 CardEditor: Unity config loaded:", unityConfig);
 
   const [cardData, setCardData] = React.useState<CardData>({
     header: "Happy Birthday!",
@@ -39,8 +33,8 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
     cardTop: "Dear John,",
     cardMiddle: "Have a great birthday!",
     cardBottom: "Love Jane",
-    unityUrl: unityConfig.unityUrl,
-    buildName: unityConfig.buildName,
+    unityUrl: "",
+    buildName: "",
   });
   const [customImageUrl, setCustomImageUrl] = React.useState("");
   const [showCustomImageInput, setShowCustomImageInput] = React.useState(false);
@@ -50,6 +44,7 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
 
   // Load data from URL parameters on component mount
   React.useEffect(() => {
+    const unityConfig = getUnityConfig();
     const urlParams = new URLSearchParams(window.location.search);
     const header = urlParams.get("header") || "Happy Birthday!";
     const message =
@@ -73,7 +68,7 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
     if (cardImage === "custom") {
       setShowCustomImageInput(true);
     }
-  }, [unityConfig]);
+  }, []);
 
   const handleInputChange = (field: keyof CardData, value: string) => {
     setCardData((prev) => ({
@@ -106,7 +101,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       setCustomImageUrl(downloadURL);
-      console.log("File available at", downloadURL);
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Failed to upload image.");
@@ -116,10 +110,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
   };
 
   const generateCardUrl = () => {
-    console.log("🎨 CardEditor: Generating card URL");
-    console.log("🎨 CardEditor: Card data:", cardData);
-    console.log("🎨 CardEditor: Custom image URL:", customImageUrl);
-
     const params = new URLSearchParams();
     params.set("header", cardData.header);
     params.set("message", cardData.message);
@@ -131,10 +121,7 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
       cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage;
     params.set("cardImage", imageValue);
 
-    const generatedUrl = `${window.location.origin}/view-card?${params.toString()}`;
-    console.log("🎨 CardEditor: Generated URL:", generatedUrl);
-
-    return generatedUrl;
+    return `${window.location.origin}/view-card?${params.toString()}`;
   };
 
   const handleGenerateCard = () => {
@@ -164,7 +151,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
           text: description,
           url: generatedUrl,
         });
-        console.log("Successful share");
       } catch (error) {
         console.error("Error sharing:", error);
       }
@@ -202,27 +188,141 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
             occasion!
           </h5>
 
-          <LandingPageForm
-            header={cardData.header}
-            message={cardData.message}
-            onHeaderChange={(value) => handleInputChange("header", value)}
-            onMessageChange={(value) => handleInputChange("message", value)}
-          />
+          {/* Landing Page Form */}
+          <div className="mb-4">
+            <h6 className="fw-bold">Landing Page</h6>
+            <p className="text-muted">
+              Customize the landing page for your greeting card
+            </p>
+            <div className="border p-3 rounded bg-light">
+              <div className="mb-3">
+                <label htmlFor="landingPageHeaderInput" className="form-label">
+                  Header
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="landingPageHeaderInput"
+                  placeholder="Enter header text"
+                  value={cardData.header}
+                  onChange={(e) => handleInputChange("header", e.target.value)}
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="landingPageMessageInput" className="form-label">
+                  Message
+                </label>
+                <textarea
+                  className="form-control"
+                  id="landingPageMessageInput"
+                  rows={3}
+                  placeholder="Enter message text"
+                  value={cardData.message}
+                  onChange={(e) => handleInputChange("message", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
 
-          <ARCardForm
-            selectedImage={cardData.cardImage}
-            customImageUrl={customImageUrl}
-            isUploading={isUploading}
-            showCustomInput={showCustomImageInput}
-            cardTop={cardData.cardTop}
-            cardMiddle={cardData.cardMiddle}
-            cardBottom={cardData.cardBottom}
-            onImageChange={handleCardImageChange}
-            onFileUpload={handleFileUpload}
-            onTopChange={(value) => handleInputChange("cardTop", value)}
-            onMiddleChange={(value) => handleInputChange("cardMiddle", value)}
-            onBottomChange={(value) => handleInputChange("cardBottom", value)}
-          />
+          {/* AR Card Form */}
+          <div className="mb-4">
+            <h6 className="fw-bold">AR Card</h6>
+            <p className="text-muted">Customize your AR card</p>
+            <div className="border p-3 rounded bg-light">
+              {/* Card Image Selector */}
+              <div className="mb-3">
+                <label htmlFor="cardImageInput" className="form-label">
+                  Card Image
+                </label>
+                <select
+                  className="form-select"
+                  id="cardImageInput"
+                  value={cardData.cardImage}
+                  onChange={(e) => handleCardImageChange(e.target.value)}
+                >
+                  <option value="birthday">Birthday</option>
+                  <option value="valentine">Valentine's Day</option>
+                  <option value="halloween">Halloween</option>
+                  <option value="christmas">Christmas</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              {showCustomImageInput && (
+                <div className="mb-3">
+                  <label htmlFor="customImageFile" className="form-label">
+                    Image
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <input
+                      type="file"
+                      className="form-control"
+                      id="customImageFile"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={isUploading}
+                    />
+                    {isUploading && (
+                      <i
+                        className="fas fa-spinner fa-spin"
+                        style={{ marginLeft: "10px" }}
+                      />
+                    )}
+                  </div>
+                  {customImageUrl && (
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        Image uploaded successfully!
+                      </small>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Card Text Form */}
+              <div className="mb-3">
+                <label htmlFor="cardTopInput" className="form-label">
+                  Top Text
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="cardTopInput"
+                  placeholder="Enter top text"
+                  value={cardData.cardTop}
+                  onChange={(e) => handleInputChange("cardTop", e.target.value)}
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="cardMiddleInput" className="form-label">
+                  Middle Text
+                </label>
+                <textarea
+                  className="form-control"
+                  id="cardMiddleInput"
+                  placeholder="Enter middle text"
+                  value={cardData.cardMiddle}
+                  onChange={(e) =>
+                    handleInputChange("cardMiddle", e.target.value)
+                  }
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="cardBottomInput" className="form-label">
+                  Bottom Text
+                </label>
+                <textarea
+                  className="form-control"
+                  id="cardBottomInput"
+                  placeholder="Enter bottom text"
+                  value={cardData.cardBottom}
+                  onChange={(e) =>
+                    handleInputChange("cardBottom", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="footer text-end">
             <button
