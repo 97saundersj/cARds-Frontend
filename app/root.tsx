@@ -39,6 +39,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // GitHub Pages SPA redirect restoration
+              (function() {
+                var redirect = sessionStorage.getItem('redirect');
+                if (redirect && redirect !== location.href) {
+                  sessionStorage.removeItem('redirect');
+                  history.replaceState(null, '', redirect);
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {children}
