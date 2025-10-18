@@ -1,8 +1,7 @@
 import type { Config } from "@react-router/dev/config";
 
 export default {
-  // Config options...
-  // Server-side render by default, to enable SPA mode set this to `false`
+  // SPA mode for static deployment
   ssr: false,
-  basename: process.env.GITHUB_ACTIONS ? "/cARds-Frontend" : undefined,
+  ...(process.env.GITHUB_ACTIONS && { basename: "/cARds-Frontend" }),
 } satisfies Config;
