@@ -115,7 +115,10 @@ export function CardEditor() {
       cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage;
     params.set("cardImage", imageValue);
 
-    return `${window.location.origin}/view-card?${params.toString()}`;
+    // Get the base path from current location
+    const basePath =
+      window.location.pathname.split("/").slice(0, -1).join("/") || "";
+    return `${window.location.origin}${basePath}/view-card?${params.toString()}`;
   };
 
   const handleGenerateCard = () => {
@@ -164,11 +167,8 @@ export function CardEditor() {
         cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
     });
 
-    window.open(
-      `/view-card?${params.toString()}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    // Use navigate to go to the view-card route with proper basename handling
+    navigate(`/view-card?${params.toString()}`);
   };
 
   const handleCloseModal = () => {
