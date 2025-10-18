@@ -87,16 +87,12 @@ export function useUnity({
             .catch((error: any) => {
               console.error("Unity initialization failed:", error);
               setIsLoading(false);
-              alert(
-                "Failed to load Unity application. Check console for details."
-              );
+              alert("Failed to load AR card viewer.");
             });
         } catch (error) {
           console.error("Error during Unity initialization:", error);
           setIsLoading(false);
-          alert(
-            "Failed to initialize Unity application. Check console for details."
-          );
+          alert("Failed to load AR card viewer.");
         }
       }
     };
@@ -104,9 +100,7 @@ export function useUnity({
     script.onerror = (error) => {
       console.error("Failed to load Unity loader script:", error);
       setIsLoading(false);
-      alert(
-        `Failed to load Unity application from ${script.src}. Check console for details.`
-      );
+      alert("Failed to load AR card viewer.");
     };
 
     document.body.appendChild(script);
