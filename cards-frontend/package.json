@@ -6,7 +6,9 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "serve:unity": "node scripts/serve-unity.js",
+    "dev:all": "concurrently -n \"React,Unity\" -c \"cyan,magenta\" \"npm run dev\" \"npm run serve:unity\""
   },
   "dependencies": {
     "@react-router/node": "^7.7.1",
@@ -23,6 +25,8 @@
     "@types/node": "^20",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "concurrently": "^9.1.0",
+    "dotenv-cli": "^8.0.0",
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.3",

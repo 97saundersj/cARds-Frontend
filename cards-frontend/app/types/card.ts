@@ -5,8 +5,6 @@ export interface CardData {
   cardTop: string;
   cardMiddle: string;
   cardBottom: string;
-  unityUrl?: string;
-  buildName?: string;
 }
 
 export interface UnityCardData {
@@ -14,10 +12,6 @@ export interface UnityCardData {
   cardTop: string;
   cardMiddle: string;
   cardBottom: string;
-}
-
-export interface CardEditorProps {
-  unityUrl?: string;
 }
 
 export type CardImageType =

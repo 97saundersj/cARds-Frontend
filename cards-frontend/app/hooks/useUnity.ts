@@ -18,7 +18,7 @@ export function useUnity({
   unityUrl,
   buildName,
   onUnityLoaded,
-}: UseUnityOptions) {
+}: UseUnityOptions = {}) {
   const [unityInstance, setUnityInstance] = React.useState<any>(null);
   const [isUnityLoaded, setIsUnityLoaded] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -37,9 +37,13 @@ export function useUnity({
       return;
     }
 
-    // Determine the build URL and name
-    const buildUrl = unityUrl || "Build";
-    const buildFileName = buildName || "Build";
+    // Determine the build URL and name from env or props
+    const buildUrl =
+      unityUrl ||
+      import.meta.env.VITE_UNITY_BUILD_URL ||
+      "http://localhost:8000";
+    const buildFileName =
+      buildName || import.meta.env.VITE_UNITY_BUILD_NAME || "WebXR-gh-pages";
 
     // Construct the loader URL
     const normalizedBuildUrl = buildUrl.endsWith("/")

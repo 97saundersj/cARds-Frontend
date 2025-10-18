@@ -7,7 +7,6 @@ import { DecorativeElements } from "./ui/DecorativeElements";
 import { ARInstructionsModal } from "./modals/ARInstructionsModal";
 import { useUnity } from "../hooks/useUnity";
 import { SharedStyles } from "./ui/SharedStyles";
-import { getUnityConfig } from "../config/unity";
 
 interface ViewCardProps {}
 
@@ -26,8 +25,6 @@ export function ViewCard({}: ViewCardProps) {
   });
   const [showInstructions, setShowInstructions] = React.useState(false);
   const [unityLoadError, setUnityLoadError] = React.useState(false);
-
-  const unityConfig = getUnityConfig();
 
   const cardDataRef = React.useRef<UnityCardData>(cardData);
 
@@ -71,8 +68,6 @@ export function ViewCard({}: ViewCardProps) {
   );
 
   const { unityInstance, isUnityLoaded, isLoading, canvasRef } = useUnity({
-    unityUrl: unityConfig.unityUrl,
-    buildName: unityConfig.buildName,
     onUnityLoaded: onUnityLoadedCallback,
   });
 

@@ -2,12 +2,11 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import type { CardData, CardEditorProps } from "../types/card";
+import type { CardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
 import { CardLinkModal } from "./modals/CardLinkModal";
 import { SharedStyles } from "./ui/SharedStyles";
-import { getUnityConfig } from "../config/unity";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -23,7 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
 
-export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
+export function CardEditor() {
   const navigate = useNavigate();
 
   const [cardData, setCardData] = React.useState<CardData>({
@@ -33,8 +32,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
     cardTop: "Dear John,",
     cardMiddle: "Have a great birthday!",
     cardBottom: "Love Jane",
-    unityUrl: "",
-    buildName: "",
   });
   const [customImageUrl, setCustomImageUrl] = React.useState("");
   const [showCustomImageInput, setShowCustomImageInput] = React.useState(false);
@@ -44,7 +41,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
 
   // Load data from URL parameters on component mount
   React.useEffect(() => {
-    const unityConfig = getUnityConfig();
     const urlParams = new URLSearchParams(window.location.search);
     const header = urlParams.get("header") || "Happy Birthday!";
     const message =
@@ -61,8 +57,6 @@ export function CardEditor({ unityUrl: propUnityUrl }: CardEditorProps) {
       cardTop,
       cardMiddle,
       cardBottom,
-      unityUrl: unityConfig.unityUrl,
-      buildName: unityConfig.buildName,
     });
 
     if (cardImage === "custom") {
