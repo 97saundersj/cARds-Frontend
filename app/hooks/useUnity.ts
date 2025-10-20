@@ -26,16 +26,20 @@ export function useUnity({
 
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const loadingBarRef = React.useRef<HTMLDivElement>(null);
+  const isInitializingRef = React.useRef(false);
+  const instanceRef = React.useRef<any>(null);
 
   React.useEffect(() => {
     if (!canvasRef.current) {
       return;
     }
 
-    // Prevent multiple instances
-    if (unityInstance) {
+    // Prevent multiple instances - use ref to persist across re-renders
+    if (isInitializingRef.current || instanceRef.current) {
       return;
     }
+
+    isInitializingRef.current = true;
 
     // Determine the build URL and name from env or props
     const buildUrl =
@@ -50,6 +54,14 @@ export function useUnity({
       ? buildUrl.slice(0, -1)
       : buildUrl;
     const loaderUrl = `${normalizedBuildUrl}/${buildFileName}.loader.js`;
+
+    // Check if script already exists
+    const existingScript = document.querySelector(`script[src="${loaderUrl}"]`);
+    if (existingScript) {
+      console.log("Unity loader script already exists, skipping...");
+      isInitializingRef.current = false;
+      return;
+    }
 
     const config: UnityConfig = {
       dataUrl: `${normalizedBuildUrl}/${buildFileName}.data.unityweb`,
@@ -79,6 +91,7 @@ export function useUnity({
               }
             )
             .then((instance: any) => {
+              instanceRef.current = instance;
               setUnityInstance(instance);
               setIsUnityLoaded(true);
               setIsLoading(false);
@@ -86,11 +99,13 @@ export function useUnity({
             })
             .catch((error: any) => {
               console.error("Unity initialization failed:", error);
+              isInitializingRef.current = false;
               setIsLoading(false);
               alert("Failed to load AR card viewer.");
             });
         } catch (error) {
           console.error("Error during Unity initialization:", error);
+          isInitializingRef.current = false;
           setIsLoading(false);
           alert("Failed to load AR card viewer.");
         }
@@ -99,6 +114,7 @@ export function useUnity({
 
     script.onerror = (error) => {
       console.error("Failed to load Unity loader script:", error);
+      isInitializingRef.current = false;
       setIsLoading(false);
       alert("Failed to load AR card viewer.");
     };
@@ -106,15 +122,25 @@ export function useUnity({
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script if component unmounts
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+      // Cleanup: Destroy Unity instance if it exists
+      if (instanceRef.current) {
+        try {
+          if (instanceRef.current.Quit) {
+            instanceRef.current.Quit(() => {
+              console.log("Unity instance destroyed");
+            });
+          }
+        } catch (error) {
+          console.error("Error destroying Unity instance:", error);
+        }
+        instanceRef.current = null;
       }
-      // Reset state to prevent memory leaks
-      setUnityInstance(null);
-      setIsUnityLoaded(false);
-      setIsLoading(true);
-      setProgress(0);
+
+      // Don't remove script on cleanup to prevent reload issues
+      // The script can be reused if component remounts
+
+      // Reset initialization flag for potential remount
+      isInitializingRef.current = false;
     };
   }, [unityUrl, buildName, onUnityLoaded]);
 
