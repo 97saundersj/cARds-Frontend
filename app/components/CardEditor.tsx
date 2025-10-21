@@ -1,30 +1,27 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { initializeApp } from "firebase/app";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import StepWizard from "react-step-wizard";
 import type { CardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
 import { CardLinkModal } from "./modals/CardLinkModal";
 import { SharedStyles } from "./ui/SharedStyles";
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const storage = getStorage(app);
+import { getApi } from "../services/api/ApiProvider";
+import { sessionCards } from "../services/storage/sessionCards";
+import { WizardNav } from "./ui/WizardNav";
+import { CardManagementStep } from "./steps/CardManagementStep";
+import { LandingPageStep } from "./steps/LandingPageStep";
+import { ARCardStep } from "./steps/ARCardStep";
 
 export function CardEditor() {
   const navigate = useNavigate();
 
+  const [cardName, setCardName] = React.useState("");
+  const [selectedSessionCardId, setSelectedSessionCardId] =
+    React.useState<string>("");
+  const [sessionCardsList, setSessionCardsList] = React.useState(
+    sessionCards.getAll()
+  );
   const [cardData, setCardData] = React.useState<CardData>({
     header: "Happy Birthday!",
     message: "Experience your AR card below.",
@@ -38,31 +35,128 @@ export function CardEditor() {
   const [isUploading, setIsUploading] = React.useState(false);
   const [showModal, setShowModal] = React.useState(false);
   const [generatedUrl, setGeneratedUrl] = React.useState("");
+  const [isSavingCard, setIsSavingCard] = React.useState(false);
+  const [currentCardId, setCurrentCardId] = React.useState<
+    string | undefined
+  >();
 
-  // Load data from URL parameters on component mount
+  // Load data from Firebase using card ID if present
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const header = urlParams.get("header") || "Happy Birthday!";
-    const message =
-      urlParams.get("message") || "Experience your AR card below.";
-    const cardImage = urlParams.get("cardImage") || "birthday";
-    const cardTop = urlParams.get("cardTop") || "Dear John,";
-    const cardMiddle = urlParams.get("cardMiddle") || "Have a great birthday!";
-    const cardBottom = urlParams.get("cardBottom") || "Love Jane";
+    const loadCardData = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cardId = urlParams.get("cardId");
 
-    setCardData({
-      header,
-      message,
-      cardImage,
-      cardTop,
-      cardMiddle,
-      cardBottom,
-    });
+      if (cardId) {
+        try {
+          const api = getApi();
+          const savedCardData = await api.getCard(cardId);
 
-    if (cardImage === "custom") {
-      setShowCustomImageInput(true);
-    }
+          if (savedCardData) {
+            setCurrentCardId(cardId);
+            if (savedCardData.cardName) {
+              setCardName(savedCardData.cardName);
+            }
+            const standardImages = [
+              "birthday",
+              "valentine",
+              "halloween",
+              "christmas",
+            ];
+            const isCustomImage = !standardImages.includes(
+              savedCardData.cardImage
+            );
+
+            if (isCustomImage) {
+              setCustomImageUrl(savedCardData.cardImage);
+              setCardData({
+                ...savedCardData,
+                cardImage: "custom",
+              });
+              setShowCustomImageInput(true);
+            } else {
+              setCardData(savedCardData);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load card data:", error);
+        }
+      }
+    };
+
+    loadCardData();
   }, []);
+
+  const handleSelectSessionCard = (cardId: string) => {
+    setSelectedSessionCardId(cardId);
+
+    if (!cardId) {
+      setCardName("");
+      setCardData({
+        header: "Happy Birthday!",
+        message: "Experience your AR card below.",
+        cardImage: "birthday",
+        cardTop: "Dear John,",
+        cardMiddle: "Have a great birthday!",
+        cardBottom: "Love Jane",
+      });
+      setCustomImageUrl("");
+      setShowCustomImageInput(false);
+      return;
+    }
+
+    const savedCard = sessionCards.getById(cardId);
+    if (savedCard) {
+      setCardName(savedCard.name);
+      setCardData(savedCard.data);
+
+      const standardImages = [
+        "birthday",
+        "valentine",
+        "halloween",
+        "christmas",
+      ];
+      const isCustomImage = !standardImages.includes(savedCard.data.cardImage);
+
+      if (isCustomImage) {
+        setCustomImageUrl(savedCard.data.cardImage);
+        setCardData({
+          ...savedCard.data,
+          cardImage: "custom",
+        });
+        setShowCustomImageInput(true);
+      } else {
+        setShowCustomImageInput(false);
+      }
+    }
+  };
+
+  const handleDeleteFromSession = () => {
+    if (!selectedSessionCardId) {
+      alert("Please select a card to delete");
+      return;
+    }
+
+    const cardToDelete = sessionCards.getById(selectedSessionCardId);
+    if (
+      cardToDelete &&
+      confirm(`Are you sure you want to delete "${cardToDelete.name}"?`)
+    ) {
+      sessionCards.delete(selectedSessionCardId);
+      setSessionCardsList(sessionCards.getAll());
+      setSelectedSessionCardId("");
+      setCardName("");
+      setCardData({
+        header: "Happy Birthday!",
+        message: "Experience your AR card below.",
+        cardImage: "birthday",
+        cardTop: "Dear John,",
+        cardMiddle: "Have a great birthday!",
+        cardBottom: "Love Jane",
+      });
+      setCustomImageUrl("");
+      setShowCustomImageInput(false);
+    }
+  };
 
   const handleInputChange = (field: keyof CardData, value: string) => {
     setCardData((prev) => ({
@@ -91,10 +185,9 @@ export function CardEditor() {
     setIsUploading(true);
 
     try {
-      const storageRef = ref(storage, `images/${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      setCustomImageUrl(downloadURL);
+      const api = getApi();
+      const result = await api.uploadImage(file);
+      setCustomImageUrl(result.url);
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Failed to upload image.");
@@ -103,28 +196,43 @@ export function CardEditor() {
     }
   };
 
-  const generateCardUrl = () => {
-    const params = new URLSearchParams();
-    params.set("header", cardData.header);
-    params.set("message", cardData.message);
-    params.set("cardTop", cardData.cardTop);
-    params.set("cardMiddle", cardData.cardMiddle);
-    params.set("cardBottom", cardData.cardBottom);
+  const handleGenerateCard = async () => {
+    setIsSavingCard(true);
+    try {
+      const api = getApi();
 
-    const imageValue =
-      cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage;
-    params.set("cardImage", imageValue);
+      const cardDataToSave: CardData = {
+        ...cardData,
+        cardName: cardName || undefined,
+        cardImage:
+          cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
+      };
 
-    // Get the base path from current location
-    const basePath =
-      window.location.pathname.split("/").slice(0, -1).join("/") || "";
-    return `${window.location.origin}${basePath}/view-card?${params.toString()}`;
-  };
+      // Save to session if card has a name
+      if (cardName.trim()) {
+        const savedCard = sessionCards.save(
+          cardName,
+          cardDataToSave,
+          selectedSessionCardId || undefined
+        );
+        setSelectedSessionCardId(savedCard.id);
+        setSessionCardsList(sessionCards.getAll());
+      }
 
-  const handleGenerateCard = () => {
-    const url = generateCardUrl();
-    setGeneratedUrl(url);
-    setShowModal(true);
+      const result = await api.saveCard(cardDataToSave, currentCardId);
+
+      const basePath =
+        window.location.pathname.split("/").slice(0, -1).join("/") || "";
+      const url = `${window.location.origin}${basePath}/view-card/${result.id}`;
+
+      setGeneratedUrl(url);
+      setShowModal(true);
+    } catch (error) {
+      console.error("Failed to generate card:", error);
+      alert("Failed to generate card. Please try again.");
+    } finally {
+      setIsSavingCard(false);
+    }
   };
 
   const handleCopyLink = async () => {
@@ -156,19 +264,27 @@ export function CardEditor() {
     }
   };
 
-  const handleViewCard = () => {
-    const params = new URLSearchParams({
-      header: cardData.header,
-      message: cardData.message,
-      cardTop: cardData.cardTop,
-      cardMiddle: cardData.cardMiddle,
-      cardBottom: cardData.cardBottom,
-      cardImage:
-        cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
-    });
+  const handleViewCard = async () => {
+    setIsSavingCard(true);
+    try {
+      const api = getApi();
 
-    // Use navigate to go to the view-card route with proper basename handling
-    navigate(`/view-card?${params.toString()}`);
+      const cardDataToSave: CardData = {
+        ...cardData,
+        cardName: cardName || undefined,
+        cardImage:
+          cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
+      };
+
+      const result = await api.saveCard(cardDataToSave, currentCardId);
+
+      navigate(`/view-card/${result.id}`);
+    } catch (error) {
+      console.error("Failed to save card:", error);
+      alert("Failed to save card. Please try again.");
+    } finally {
+      setIsSavingCard(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -186,151 +302,33 @@ export function CardEditor() {
             occasion!
           </h5>
 
-          {/* Landing Page Form */}
-          <div className="mb-4">
-            <h6 className="fw-bold">Landing Page</h6>
-            <p className="text-muted">
-              Customize the landing page for your greeting card
-            </p>
-            <div className="border p-3 rounded bg-light">
-              <div className="mb-3">
-                <label htmlFor="landingPageHeaderInput" className="form-label">
-                  Header
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="landingPageHeaderInput"
-                  placeholder="Enter header text"
-                  value={cardData.header}
-                  onChange={(e) => handleInputChange("header", e.target.value)}
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="landingPageMessageInput" className="form-label">
-                  Message
-                </label>
-                <textarea
-                  className="form-control"
-                  id="landingPageMessageInput"
-                  rows={3}
-                  placeholder="Enter message text"
-                  value={cardData.message}
-                  onChange={(e) => handleInputChange("message", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          <StepWizard nav={<WizardNav />}>
+            <CardManagementStep
+              cardName={cardName}
+              setCardName={setCardName}
+              selectedSessionCardId={selectedSessionCardId}
+              sessionCardsList={sessionCardsList}
+              handleSelectSessionCard={handleSelectSessionCard}
+              handleDeleteFromSession={handleDeleteFromSession}
+            />
 
-          {/* AR Card Form */}
-          <div className="mb-4">
-            <h6 className="fw-bold">AR Card</h6>
-            <p className="text-muted">Customize your AR card</p>
-            <div className="border p-3 rounded bg-light">
-              {/* Card Image Selector */}
-              <div className="mb-3">
-                <label htmlFor="cardImageInput" className="form-label">
-                  Card Image
-                </label>
-                <select
-                  className="form-select"
-                  id="cardImageInput"
-                  value={cardData.cardImage}
-                  onChange={(e) => handleCardImageChange(e.target.value)}
-                >
-                  <option value="birthday">Birthday</option>
-                  <option value="valentine">Valentine's Day</option>
-                  <option value="halloween">Halloween</option>
-                  <option value="christmas">Christmas</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </div>
+            <LandingPageStep
+              cardData={cardData}
+              handleInputChange={handleInputChange}
+            />
 
-              {showCustomImageInput && (
-                <div className="mb-3">
-                  <label htmlFor="customImageFile" className="form-label">
-                    Image
-                  </label>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <input
-                      type="file"
-                      className="form-control"
-                      id="customImageFile"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      disabled={isUploading}
-                    />
-                    {isUploading && (
-                      <i
-                        className="fas fa-spinner fa-spin"
-                        style={{ marginLeft: "10px" }}
-                      />
-                    )}
-                  </div>
-                  {customImageUrl && (
-                    <div className="mt-2">
-                      <small className="text-muted">
-                        Image uploaded successfully!
-                      </small>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Card Text Form */}
-              <div className="mb-3">
-                <label htmlFor="cardTopInput" className="form-label">
-                  Top Text
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="cardTopInput"
-                  placeholder="Enter top text"
-                  value={cardData.cardTop}
-                  onChange={(e) => handleInputChange("cardTop", e.target.value)}
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="cardMiddleInput" className="form-label">
-                  Middle Text
-                </label>
-                <textarea
-                  className="form-control"
-                  id="cardMiddleInput"
-                  placeholder="Enter middle text"
-                  value={cardData.cardMiddle}
-                  onChange={(e) =>
-                    handleInputChange("cardMiddle", e.target.value)
-                  }
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="cardBottomInput" className="form-label">
-                  Bottom Text
-                </label>
-                <textarea
-                  className="form-control"
-                  id="cardBottomInput"
-                  placeholder="Enter bottom text"
-                  value={cardData.cardBottom}
-                  onChange={(e) =>
-                    handleInputChange("cardBottom", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="footer text-end">
-            <button
-              className="btn btn-primary"
-              onClick={handleGenerateCard}
-              disabled={isUploading}
-            >
-              Generate Card
-            </button>
-          </div>
+            <ARCardStep
+              cardData={cardData}
+              customImageUrl={customImageUrl}
+              showCustomImageInput={showCustomImageInput}
+              isUploading={isUploading}
+              isSavingCard={isSavingCard}
+              handleInputChange={handleInputChange}
+              handleCardImageChange={handleCardImageChange}
+              handleFileUpload={handleFileUpload}
+              handleGenerateCard={handleGenerateCard}
+            />
+          </StepWizard>
 
           <CardLinkModal
             isOpen={showModal}
