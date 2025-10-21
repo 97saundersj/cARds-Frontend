@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import StepWizard from "react-step-wizard";
 import type { CardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
@@ -7,6 +8,10 @@ import { CardLinkModal } from "./modals/CardLinkModal";
 import { SharedStyles } from "./ui/SharedStyles";
 import { getApi } from "../services/api/ApiProvider";
 import { sessionCards } from "../services/storage/sessionCards";
+import { WizardNav } from "./ui/WizardNav";
+import { CardManagementStep } from "./steps/CardManagementStep";
+import { LandingPageStep } from "./steps/LandingPageStep";
+import { ARCardStep } from "./steps/ARCardStep";
 
 export function CardEditor() {
   const navigate = useNavigate();
@@ -297,213 +302,33 @@ export function CardEditor() {
             occasion!
           </h5>
 
-          {/* Card Name and Selection */}
-          <div className="mb-4">
-            <h6 className="fw-bold">Card Management</h6>
-            <p className="text-muted">
-              Name your card and manage existing cards
-            </p>
-            <div className="border p-3 rounded bg-light">
-              <div className="mb-3">
-                <label htmlFor="selectExistingCard" className="form-label">
-                  Load Existing Card
-                </label>
-                <select
-                  className="form-select"
-                  id="selectExistingCard"
-                  value={selectedSessionCardId}
-                  onChange={(e) => handleSelectSessionCard(e.target.value)}
-                >
-                  <option value="">-- Create New Card --</option>
-                  {sessionCardsList.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.name} (Last modified:{" "}
-                      {new Date(card.lastModified).toLocaleString()})
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <StepWizard nav={<WizardNav />}>
+            <CardManagementStep
+              cardName={cardName}
+              setCardName={setCardName}
+              selectedSessionCardId={selectedSessionCardId}
+              sessionCardsList={sessionCardsList}
+              handleSelectSessionCard={handleSelectSessionCard}
+              handleDeleteFromSession={handleDeleteFromSession}
+            />
 
-              <div className="mb-3">
-                <label htmlFor="cardNameInput" className="form-label">
-                  Card Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="cardNameInput"
-                  placeholder="Enter a name for your card (e.g., Mom's Birthday Card)"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+            <LandingPageStep
+              cardData={cardData}
+              handleInputChange={handleInputChange}
+            />
 
-          {/* Landing Page Form */}
-          <div className="mb-4">
-            <h6 className="fw-bold">Landing Page</h6>
-            <p className="text-muted">
-              Customize the landing page for your greeting card
-            </p>
-            <div className="border p-3 rounded bg-light">
-              <div className="mb-3">
-                <label htmlFor="landingPageHeaderInput" className="form-label">
-                  Header
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="landingPageHeaderInput"
-                  placeholder="Enter header text"
-                  value={cardData.header}
-                  onChange={(e) => handleInputChange("header", e.target.value)}
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="landingPageMessageInput" className="form-label">
-                  Message
-                </label>
-                <textarea
-                  className="form-control"
-                  id="landingPageMessageInput"
-                  rows={3}
-                  placeholder="Enter message text"
-                  value={cardData.message}
-                  onChange={(e) => handleInputChange("message", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* AR Card Form */}
-          <div className="mb-4">
-            <h6 className="fw-bold">AR Card</h6>
-            <p className="text-muted">Customize your AR card</p>
-            <div className="border p-3 rounded bg-light">
-              {/* Card Image Selector */}
-              <div className="mb-3">
-                <label htmlFor="cardImageInput" className="form-label">
-                  Card Image
-                </label>
-                <select
-                  className="form-select"
-                  id="cardImageInput"
-                  value={cardData.cardImage}
-                  onChange={(e) => handleCardImageChange(e.target.value)}
-                >
-                  <option value="birthday">Birthday</option>
-                  <option value="valentine">Valentine's Day</option>
-                  <option value="halloween">Halloween</option>
-                  <option value="christmas">Christmas</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </div>
-
-              {showCustomImageInput && (
-                <div className="mb-3">
-                  <label htmlFor="customImageFile" className="form-label">
-                    Image
-                  </label>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <input
-                      type="file"
-                      className="form-control"
-                      id="customImageFile"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      disabled={isUploading}
-                    />
-                    {isUploading && (
-                      <i
-                        className="fas fa-spinner fa-spin"
-                        style={{ marginLeft: "10px" }}
-                      />
-                    )}
-                  </div>
-                  {customImageUrl && (
-                    <div className="mt-3">
-                      <div className="border rounded p-2 bg-white d-inline-block">
-                        <img
-                          src={customImageUrl}
-                          alt="Custom card preview"
-                          style={{
-                            maxWidth: "200px",
-                            maxHeight: "200px",
-                            display: "block",
-                          }}
-                        />
-                      </div>
-
-                      <small className="text-muted d-block mb-2">
-                        Image uploaded successfully!
-                      </small>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Card Text Form */}
-              <div className="mb-3">
-                <label htmlFor="cardTopInput" className="form-label">
-                  Top Text
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="cardTopInput"
-                  placeholder="Enter top text"
-                  value={cardData.cardTop}
-                  onChange={(e) => handleInputChange("cardTop", e.target.value)}
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="cardMiddleInput" className="form-label">
-                  Middle Text
-                </label>
-                <textarea
-                  className="form-control"
-                  id="cardMiddleInput"
-                  placeholder="Enter middle text"
-                  value={cardData.cardMiddle}
-                  onChange={(e) =>
-                    handleInputChange("cardMiddle", e.target.value)
-                  }
-                />
-              </div>
-              <div className="mb-3">
-                <label htmlFor="cardBottomInput" className="form-label">
-                  Bottom Text
-                </label>
-                <textarea
-                  className="form-control"
-                  id="cardBottomInput"
-                  placeholder="Enter bottom text"
-                  value={cardData.cardBottom}
-                  onChange={(e) =>
-                    handleInputChange("cardBottom", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="footer d-flex justify-content-between">
-            <button
-              className="btn btn-danger"
-              onClick={handleDeleteFromSession}
-              disabled={!selectedSessionCardId}
-            >
-              Delete Card
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={handleGenerateCard}
-              disabled={isUploading || isSavingCard}
-            >
-              {isSavingCard ? "Generating..." : "Generate Card"}
-            </button>
-          </div>
+            <ARCardStep
+              cardData={cardData}
+              customImageUrl={customImageUrl}
+              showCustomImageInput={showCustomImageInput}
+              isUploading={isUploading}
+              isSavingCard={isSavingCard}
+              handleInputChange={handleInputChange}
+              handleCardImageChange={handleCardImageChange}
+              handleFileUpload={handleFileUpload}
+              handleGenerateCard={handleGenerateCard}
+            />
+          </StepWizard>
 
           <CardLinkModal
             isOpen={showModal}

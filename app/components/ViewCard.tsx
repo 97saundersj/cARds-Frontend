@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import type { UnityCardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
-import { DecorativeElements } from "./ui/DecorativeElements";
+import { LandingPageDisplay } from "./ui/LandingPageDisplay";
 import { ARInstructionsModal } from "./modals/ARInstructionsModal";
 import { useARRenderer } from "../hooks/useARRenderer";
 import { SharedStyles } from "./ui/SharedStyles";
@@ -96,32 +96,24 @@ export function ViewCard({}: ViewCardProps) {
     }
   };
 
+  const buttonText = isLoadingCard
+    ? "Loading Card..."
+    : isLoading
+      ? "Loading..."
+      : error || loadError
+        ? "Load Error"
+        : "View Card";
+
   return (
     <div className="d-flex flex-column min-h-screen">
       <div className="container-fluid flex-grow-1 d-flex flex-column justify-content-center align-items-center py-4">
-        <div id="message" className="text-center mb-4">
-          <h1 id="landingPageHeader">{header}</h1>
-          <p id="landingPageMessage" className="mb-4">
-            {message}
-          </p>
-        </div>
-
-        <DecorativeElements />
-
-        <button
-          id="viewCardButton"
-          className="mt-4 btn btn-primary"
-          disabled={isLoading || !!error || isLoadingCard || !!loadError}
-          onClick={handleViewCardClick}
-        >
-          {isLoadingCard
-            ? "Loading Card..."
-            : isLoading
-              ? "Loading..."
-              : error || loadError
-                ? "Load Error"
-                : "View Card"}
-        </button>
+        <LandingPageDisplay
+          header={header}
+          message={message}
+          buttonText={buttonText}
+          buttonDisabled={isLoading || !!error || isLoadingCard || !!loadError}
+          onButtonClick={handleViewCardClick}
+        />
 
         {loadError && (
           <div className="mt-3 alert alert-danger" role="alert">
