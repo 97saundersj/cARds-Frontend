@@ -1,4 +1,5 @@
 export interface CardData {
+  cardName?: string;
   header: string;
   message: string;
   cardImage: string;

@@ -10,8 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, "../.env.local") });
 config({ path: resolve(__dirname, "../.env") });
 
-const buildPath = process.env.UNITY_BUILD_PATH || "public/unity";
-const port = process.env.VITE_UNITY_SERVER_PORT || "8000";
+const buildPath = process.env.UNITY_BUILD_PATH;
+const port = process.env.VITE_UNITY_SERVER_PORT;
 
 console.log(`Starting Unity server...`);
 console.log(`Path: ${buildPath}`);

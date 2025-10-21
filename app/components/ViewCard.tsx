@@ -1,17 +1,18 @@
 import React from "react";
-import { useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import type { UnityCardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
 import { DecorativeElements } from "./ui/DecorativeElements";
 import { ARInstructionsModal } from "./modals/ARInstructionsModal";
-import { useUnity } from "../hooks/useUnity";
+import { useARRenderer } from "../hooks/useARRenderer";
 import { SharedStyles } from "./ui/SharedStyles";
+import { getApi } from "../services/api/ApiProvider";
 
 interface ViewCardProps {}
 
 export function ViewCard({}: ViewCardProps) {
-  const [searchParams] = useSearchParams();
+  const { id } = useParams<{ id: string }>();
 
   const [header, setHeader] = React.useState("Happy Birthday!");
   const [message, setMessage] = React.useState(
@@ -24,7 +25,8 @@ export function ViewCard({}: ViewCardProps) {
     cardBottom: "",
   });
   const [showInstructions, setShowInstructions] = React.useState(false);
-  const [unityLoadError, setUnityLoadError] = React.useState(false);
+  const [isLoadingCard, setIsLoadingCard] = React.useState(false);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const cardDataRef = React.useRef<UnityCardData>(cardData);
 
@@ -33,79 +35,55 @@ export function ViewCard({}: ViewCardProps) {
     cardDataRef.current = cardData;
   }, [cardData]);
 
-  const sendCardTextToUnity = React.useCallback((instance: any) => {
-    const currentData = cardDataRef.current;
-    console.log("Sending data to Unity:", currentData);
-    if (
-      instance &&
-      (currentData.cardTop || currentData.cardMiddle || currentData.cardBottom)
-    ) {
-      try {
-        instance.SendMessage(
-          "Card",
-          "UpdateCardText",
-          JSON.stringify(currentData)
-        );
-        console.log("Data sent to Unity successfully");
-      } catch (error) {
-        console.error("Failed to send data to Unity:", error);
+  const { renderer, isLoaded, isLoading, canvasRef, error } = useARRenderer();
+
+  React.useEffect(() => {
+    const loadCardData = async () => {
+      if (!id) {
+        setLoadError("No card ID provided");
+        return;
       }
-    } else {
-      console.log("No data to send to Unity or Unity instance not available");
-    }
-  }, []);
 
-  const onUnityLoadedCallback = React.useCallback(
-    (instance: any) => {
-      console.log("Unity loaded, sending initial data");
-      // Send data after a small delay to ensure Unity is fully ready
+      setIsLoadingCard(true);
+      setLoadError(null);
+
+      try {
+        const api = getApi();
+        const loadedCardData = await api.getCard(id);
+
+        if (!loadedCardData) {
+          setLoadError("Card not found");
+          return;
+        }
+
+        setHeader(loadedCardData.header);
+        setMessage(loadedCardData.message);
+        setCardData({
+          cardImage: loadedCardData.cardImage,
+          cardTop: loadedCardData.cardTop,
+          cardMiddle: loadedCardData.cardMiddle,
+          cardBottom: loadedCardData.cardBottom,
+        });
+      } catch (error) {
+        console.error("Failed to load card data:", error);
+        setLoadError("Failed to load card data");
+      } finally {
+        setIsLoadingCard(false);
+      }
+    };
+
+    loadCardData();
+  }, [id]);
+
+  // Send data to renderer whenever cardData changes and renderer is loaded
+  React.useEffect(() => {
+    if (isLoaded && renderer) {
+      console.log("Card data changed, sending to renderer");
       setTimeout(() => {
-        sendCardTextToUnity(instance);
+        renderer.updateCardData(cardDataRef.current);
       }, 100);
-      setUnityLoadError(false);
-    },
-    [sendCardTextToUnity]
-  );
-
-  const { unityInstance, isUnityLoaded, isLoading, canvasRef } = useUnity({
-    onUnityLoaded: onUnityLoadedCallback,
-  });
-
-  // Monitor Unity loading state for errors
-  React.useEffect(() => {
-    if (!isLoading && !isUnityLoaded) {
-      // If loading finished but Unity didn't load, there was an error
-      setUnityLoadError(true);
     }
-  }, [isLoading, isUnityLoaded]);
-
-  React.useEffect(() => {
-    // Load data from URL parameters
-    const urlHeader = searchParams.get("header") || "Happy Birthday!";
-    const urlMessage =
-      searchParams.get("message") || "Experience your AR card below.";
-    const urlCardImage = searchParams.get("cardImage") || "birthday";
-    const urlCardTop = searchParams.get("cardTop") || "";
-    const urlCardMiddle = searchParams.get("cardMiddle") || "";
-    const urlCardBottom = searchParams.get("cardBottom") || "";
-
-    setHeader(urlHeader);
-    setMessage(urlMessage);
-    setCardData({
-      cardImage: urlCardImage,
-      cardTop: urlCardTop,
-      cardMiddle: urlCardMiddle,
-      cardBottom: urlCardBottom,
-    });
-  }, [searchParams]);
-
-  // Send data to Unity whenever cardData changes and Unity is loaded
-  React.useEffect(() => {
-    if (isUnityLoaded && unityInstance) {
-      console.log("Card data changed, sending to Unity");
-      sendCardTextToUnity(unityInstance);
-    }
-  }, [cardData, isUnityLoaded, unityInstance, sendCardTextToUnity]);
+  }, [cardData, isLoaded, renderer]);
 
   const handleViewCardClick = () => {
     setShowInstructions(true);
@@ -113,8 +91,8 @@ export function ViewCard({}: ViewCardProps) {
 
   const handleGotItClick = () => {
     setShowInstructions(false);
-    if (unityInstance && unityInstance.Module && unityInstance.Module.WebXR) {
-      unityInstance.Module.WebXR.toggleAR();
+    if (renderer) {
+      renderer.toggleAR();
     }
   };
 
@@ -133,17 +111,25 @@ export function ViewCard({}: ViewCardProps) {
         <button
           id="viewCardButton"
           className="mt-4 btn btn-primary"
-          disabled={isLoading || unityLoadError}
+          disabled={isLoading || !!error || isLoadingCard || !!loadError}
           onClick={handleViewCardClick}
         >
-          {isLoading
-            ? "Loading..."
-            : unityLoadError
-              ? "Unity Load Error"
-              : "View Card"}
+          {isLoadingCard
+            ? "Loading Card..."
+            : isLoading
+              ? "Loading..."
+              : error || loadError
+                ? "Load Error"
+                : "View Card"}
         </button>
 
-        {unityLoadError && (
+        {loadError && (
+          <div className="mt-3 alert alert-danger" role="alert">
+            <h6>{loadError}</h6>
+          </div>
+        )}
+
+        {!isLoading && !isLoaded && error && !loadError && (
           <div className="mt-3 alert alert-warning" role="alert">
             <h6>The AR experience couldn't be loaded.</h6>
           </div>
@@ -154,15 +140,6 @@ export function ViewCard({}: ViewCardProps) {
           onClose={() => setShowInstructions(false)}
           onGotIt={handleGotItClick}
         />
-
-        <div className="d-none">
-          <div
-            id="unity-container"
-            className={isUnityLoaded ? "d-block" : "d-none"}
-          >
-            <canvas id="unity-canvas" ref={canvasRef} />
-          </div>
-        </div>
       </div>
 
       <Footer />

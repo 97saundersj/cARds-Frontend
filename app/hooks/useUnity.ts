@@ -9,16 +9,10 @@ declare global {
 }
 
 interface UseUnityOptions {
-  unityUrl?: string;
-  buildName?: string;
   onUnityLoaded?: (instance: any) => void;
 }
 
-export function useUnity({
-  unityUrl,
-  buildName,
-  onUnityLoaded,
-}: UseUnityOptions = {}) {
+export function useUnity({ onUnityLoaded }: UseUnityOptions = {}) {
   const [unityInstance, setUnityInstance] = React.useState<any>(null);
   const [isUnityLoaded, setIsUnityLoaded] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -42,12 +36,8 @@ export function useUnity({
     isInitializingRef.current = true;
 
     // Determine the build URL and name from env or props
-    const buildUrl =
-      unityUrl ||
-      import.meta.env.VITE_UNITY_BUILD_URL ||
-      "http://localhost:8000";
-    const buildFileName =
-      buildName || import.meta.env.VITE_UNITY_BUILD_NAME || "WebXR-gh-pages";
+    const buildUrl = import.meta.env.VITE_UNITY_BUILD_URL;
+    const buildFileName = import.meta.env.VITE_UNITY_BUILD_NAME;
 
     // Construct the loader URL
     const normalizedBuildUrl = buildUrl.endsWith("/")
@@ -67,7 +57,7 @@ export function useUnity({
       dataUrl: `${normalizedBuildUrl}/${buildFileName}.data.unityweb`,
       frameworkUrl: `${normalizedBuildUrl}/${buildFileName}.framework.js.unityweb`,
       codeUrl: `${normalizedBuildUrl}/${buildFileName}.wasm.unityweb`,
-      streamingAssetsUrl: unityUrl
+      streamingAssetsUrl: buildUrl
         ? `${normalizedBuildUrl}/StreamingAssets`
         : "StreamingAssets",
       companyName: "DefaultCompany",
@@ -142,7 +132,7 @@ export function useUnity({
       // Reset initialization flag for potential remount
       isInitializingRef.current = false;
     };
-  }, [unityUrl, buildName, onUnityLoaded]);
+  }, [onUnityLoaded]);
 
   return {
     unityInstance,

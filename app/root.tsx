@@ -43,6 +43,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        {/* Persistent Unity canvas container - prevents Unity errors on navigation */}
+        <div id="unity-persistent-container" style={{ display: "none" }}>
+          <canvas id="unity-canvas" />
+        </div>
         <ScrollRestoration />
         <Scripts />
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
