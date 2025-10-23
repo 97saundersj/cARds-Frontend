@@ -1,4 +1,4 @@
-name: Dev Build and Deploy
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
