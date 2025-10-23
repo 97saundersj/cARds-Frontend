@@ -4,6 +4,10 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? "/cARds-Frontend/" : "/",
+  base: process.env.VITE_AZURE_DEPLOY
+    ? "/"
+    : process.env.GITHUB_ACTIONS
+      ? "/cARds-Frontend/"
+      : "/",
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
 });
