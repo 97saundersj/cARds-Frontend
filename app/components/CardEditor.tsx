@@ -291,7 +291,7 @@ export function CardEditor() {
   };
 
   return (
-    <div className="vh-100 bg-light">
+    <div className="d-flex flex-column vh-100 bg-light">
       <Navbar />
 
       <div className="container-fluid flex-grow-1 d-flex flex-column align-items-center py-4">
