@@ -291,56 +291,56 @@ export function CardEditor() {
   };
 
   return (
-    <div className="d-flex flex-column vh-100 bg-light">
+    <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
 
-      <div className="container-fluid flex-grow-1 d-flex flex-column align-items-center py-4">
-        <div className="container">
-          <h5 className="text-muted mb-4">
-            Create your own web based Augmented Reality greeting cards for any
-            occasion!
-          </h5>
+      <div className="container-fluid d-flex flex-column align-items-center py-4">
+        <h5 className="text-muted mb-4">
+          Create your own web based Augmented Reality greeting cards for any
+          occasion!
+        </h5>
 
-          <StepWizard nav={<WizardNav />}>
-            <CardManagementStep
-              cardName={cardName}
-              setCardName={setCardName}
-              selectedSessionCardId={selectedSessionCardId}
-              sessionCardsList={sessionCardsList}
-              handleSelectSessionCard={handleSelectSessionCard}
-              handleDeleteFromSession={handleDeleteFromSession}
-            />
-
-            <LandingPageStep
-              cardData={cardData}
-              handleInputChange={handleInputChange}
-            />
-
-            <ARCardStep
-              cardData={cardData}
-              customImageUrl={customImageUrl}
-              showCustomImageInput={showCustomImageInput}
-              isUploading={isUploading}
-              isSavingCard={isSavingCard}
-              handleInputChange={handleInputChange}
-              handleCardImageChange={handleCardImageChange}
-              handleFileUpload={handleFileUpload}
-              handleGenerateCard={handleGenerateCard}
-            />
-          </StepWizard>
-
-          <CardLinkModal
-            isOpen={showModal}
-            onClose={handleCloseModal}
-            onViewCard={handleViewCard}
-            generatedUrl={generatedUrl}
-            onCopyLink={handleCopyLink}
-            onShareLink={handleShareLink}
+        <StepWizard nav={<WizardNav />} className="step-wizard">
+          <CardManagementStep
+            cardName={cardName}
+            setCardName={setCardName}
+            selectedSessionCardId={selectedSessionCardId}
+            sessionCardsList={sessionCardsList}
+            handleSelectSessionCard={handleSelectSessionCard}
+            handleDeleteFromSession={handleDeleteFromSession}
           />
-        </div>
+
+          <LandingPageStep
+            cardData={cardData}
+            handleInputChange={handleInputChange}
+          />
+
+          <ARCardStep
+            cardData={cardData}
+            customImageUrl={customImageUrl}
+            showCustomImageInput={showCustomImageInput}
+            isUploading={isUploading}
+            isSavingCard={isSavingCard}
+            handleInputChange={handleInputChange}
+            handleCardImageChange={handleCardImageChange}
+            handleFileUpload={handleFileUpload}
+            handleGenerateCard={handleGenerateCard}
+          />
+        </StepWizard>
+
+        <CardLinkModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onViewCard={handleViewCard}
+          generatedUrl={generatedUrl}
+          onCopyLink={handleCopyLink}
+          onShareLink={handleShareLink}
+        />
       </div>
 
-      <Footer />
+      <div className="mt-auto">
+        <Footer />
+      </div>
     </div>
   );
 }
