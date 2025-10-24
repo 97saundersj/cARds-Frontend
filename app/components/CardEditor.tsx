@@ -294,7 +294,10 @@ export function CardEditor() {
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
 
-      <div className="container-fluid d-flex flex-column align-items-center py-4">
+      <div
+        className="container-fluid d-flex flex-column align-items-center py-4"
+        style={{ overflow: "hidden" }}
+      >
         <h5 className="text-muted mb-4">
           Create your own web based Augmented Reality greeting cards for any
           occasion!
