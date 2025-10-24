@@ -228,18 +228,10 @@ export function ViewCard({}: ViewCardProps) {
                     different browser or supported device for AR.
                   </p>
                 </div>
-                <div className="modal-footer">
-                  <a
-                    className="btn btn-outline-secondary"
-                    href="https://developers.google.com/ar"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Learn more
-                  </a>
+                <div className="modal-footer justify-content-between">
                   <button
                     type="button"
-                    className="btn btn-outline-primary"
+                    className="btn btn-secondary"
                     onClick={() => setShowWebXRModal(false)}
                   >
                     Close
