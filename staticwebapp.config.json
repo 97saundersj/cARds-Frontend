@@ -31,7 +31,7 @@
     ".ico": "image/x-icon"
   },
   "globalHeaders": {
-    "content-security-policy": "default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; img-src 'self' data: https: blob:; connect-src 'self' https: wss:;"
+    "content-security-policy": "default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://97saundersj.github.io; img-src 'self' data: https: blob:; connect-src 'self' https: wss:;"
   },
   "responseOverrides": {
     "404": {
