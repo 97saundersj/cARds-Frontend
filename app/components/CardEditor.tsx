@@ -277,7 +277,7 @@ export function CardEditor() {
 
       const result = await api.saveCard(cardDataToSave, currentCardId);
 
-      navigate(`/view-card/${result.id}`);
+      window.open(`/view-card/${result.id}`, "_blank");
     } catch (error) {
       console.error("Failed to save card:", error);
       alert("Failed to save card. Please try again.");
