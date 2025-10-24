@@ -20,6 +20,9 @@ export function CardManagementStep({
   handleDeleteFromSession,
   nextStep,
 }: CardManagementStepProps) {
+  const isCreatingNewCard = selectedSessionCardId === "";
+  const canProceed = isCreatingNewCard ? cardName.trim() !== "" : true;
+
   return (
     <div>
       <h6 className="fw-bold">Card Management</h6>
@@ -67,7 +70,11 @@ export function CardManagementStep({
         >
           Delete Card
         </button>
-        <button className="btn btn-primary" onClick={nextStep}>
+        <button
+          className="btn btn-primary"
+          onClick={nextStep}
+          disabled={!canProceed}
+        >
           Next <i className="fas fa-arrow-right ms-1" />
         </button>
       </div>

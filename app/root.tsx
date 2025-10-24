@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { RedirectHandler } from "./components/RedirectHandler";
-import "./app.css";
+import appStylesheet from "./app.css?url";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,6 +29,10 @@ export const links: Route.LinksFunction = () => [
   {
     rel: "stylesheet",
     href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css",
+  },
+  {
+    rel: "stylesheet",
+    href: appStylesheet,
   },
 ];
 
