@@ -5,7 +5,6 @@ import type { CardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
 import { CardLinkModal } from "./modals/CardLinkModal";
-import { SharedStyles } from "./ui/SharedStyles";
 import { getApi } from "../services/api/ApiProvider";
 import { sessionCards } from "../services/storage/sessionCards";
 import { WizardNav } from "./ui/WizardNav";
@@ -278,7 +277,7 @@ export function CardEditor() {
 
       const result = await api.saveCard(cardDataToSave, currentCardId);
 
-      navigate(`/view-card/${result.id}`);
+      window.open(`/view-card/${result.id}`, "_blank");
     } catch (error) {
       console.error("Failed to save card:", error);
       alert("Failed to save card. Please try again.");
@@ -292,57 +291,59 @@ export function CardEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-light">
+    <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
 
-      <div className="container-fluid flex-grow-1 d-flex flex-column align-items-center py-4">
-        <div className="container">
-          <h5 className="text-muted mb-4">
-            Create your own web based Augmented Reality greeting cards for any
-            occasion!
-          </h5>
+      <div
+        className="container-fluid d-flex flex-column align-items-center py-4"
+        style={{ overflow: "hidden" }}
+      >
+        <h5 className="text-muted mb-4">
+          Create your own web based Augmented Reality greeting cards for any
+          occasion!
+        </h5>
 
-          <StepWizard nav={<WizardNav />}>
-            <CardManagementStep
-              cardName={cardName}
-              setCardName={setCardName}
-              selectedSessionCardId={selectedSessionCardId}
-              sessionCardsList={sessionCardsList}
-              handleSelectSessionCard={handleSelectSessionCard}
-              handleDeleteFromSession={handleDeleteFromSession}
-            />
-
-            <LandingPageStep
-              cardData={cardData}
-              handleInputChange={handleInputChange}
-            />
-
-            <ARCardStep
-              cardData={cardData}
-              customImageUrl={customImageUrl}
-              showCustomImageInput={showCustomImageInput}
-              isUploading={isUploading}
-              isSavingCard={isSavingCard}
-              handleInputChange={handleInputChange}
-              handleCardImageChange={handleCardImageChange}
-              handleFileUpload={handleFileUpload}
-              handleGenerateCard={handleGenerateCard}
-            />
-          </StepWizard>
-
-          <CardLinkModal
-            isOpen={showModal}
-            onClose={handleCloseModal}
-            onViewCard={handleViewCard}
-            generatedUrl={generatedUrl}
-            onCopyLink={handleCopyLink}
-            onShareLink={handleShareLink}
+        <StepWizard nav={<WizardNav />} className="step-wizard">
+          <CardManagementStep
+            cardName={cardName}
+            setCardName={setCardName}
+            selectedSessionCardId={selectedSessionCardId}
+            sessionCardsList={sessionCardsList}
+            handleSelectSessionCard={handleSelectSessionCard}
+            handleDeleteFromSession={handleDeleteFromSession}
           />
-        </div>
+
+          <LandingPageStep
+            cardData={cardData}
+            handleInputChange={handleInputChange}
+          />
+
+          <ARCardStep
+            cardData={cardData}
+            customImageUrl={customImageUrl}
+            showCustomImageInput={showCustomImageInput}
+            isUploading={isUploading}
+            isSavingCard={isSavingCard}
+            handleInputChange={handleInputChange}
+            handleCardImageChange={handleCardImageChange}
+            handleFileUpload={handleFileUpload}
+            handleGenerateCard={handleGenerateCard}
+          />
+        </StepWizard>
+
+        <CardLinkModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onViewCard={handleViewCard}
+          generatedUrl={generatedUrl}
+          onCopyLink={handleCopyLink}
+          onShareLink={handleShareLink}
+        />
       </div>
 
-      <Footer />
-      <SharedStyles />
+      <div className="mt-auto">
+        <Footer />
+      </div>
     </div>
   );
 }

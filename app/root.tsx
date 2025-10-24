@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { RedirectHandler } from "./components/RedirectHandler";
-import "./app.css";
+import appStylesheet from "./app.css?url";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,6 +29,10 @@ export const links: Route.LinksFunction = () => [
   {
     rel: "stylesheet",
     href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css",
+  },
+  {
+    rel: "stylesheet",
+    href: appStylesheet,
   },
 ];
 
@@ -82,11 +86,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
+    <main className="container pt-5 p-4">
       <h1>{message}</h1>
       <p>{details}</p>
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
+        <pre className="w-100 p-4 overflow-auto">
           <code>{stack}</code>
         </pre>
       )}

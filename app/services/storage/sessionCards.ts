@@ -1,6 +1,6 @@
 import type { CardData } from "../../types/card";
 
-const SESSION_KEY = "userCards";
+const STORAGE_KEY = "userCards";
 
 export interface SavedCard {
   id: string;
@@ -12,10 +12,10 @@ export interface SavedCard {
 export const sessionCards = {
   getAll(): SavedCard[] {
     try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error("Failed to get cards from session:", error);
+      console.error("Failed to get cards from storage:", error);
       return [];
     }
   },
@@ -39,7 +39,7 @@ export const sessionCards = {
       cards.push(savedCard);
     }
 
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(cards));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
     return savedCard;
   },
 
@@ -51,6 +51,6 @@ export const sessionCards = {
   delete(id: string): void {
     const cards = this.getAll();
     const filtered = cards.filter((c) => c.id !== id);
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(filtered));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
   },
 };
