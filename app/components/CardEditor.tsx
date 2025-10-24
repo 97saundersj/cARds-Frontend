@@ -5,7 +5,6 @@ import type { CardData } from "../types/card";
 import { Navbar } from "./ui/Navbar";
 import { Footer } from "./ui/Footer";
 import { CardLinkModal } from "./modals/CardLinkModal";
-import { SharedStyles } from "./ui/SharedStyles";
 import { getApi } from "../services/api/ApiProvider";
 import { sessionCards } from "../services/storage/sessionCards";
 import { WizardNav } from "./ui/WizardNav";
@@ -292,7 +291,7 @@ export function CardEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-light">
+    <div className="vh-100 bg-light">
       <Navbar />
 
       <div className="container-fluid flex-grow-1 d-flex flex-column align-items-center py-4">
@@ -342,7 +341,6 @@ export function CardEditor() {
       </div>
 
       <Footer />
-      <SharedStyles />
     </div>
   );
 }

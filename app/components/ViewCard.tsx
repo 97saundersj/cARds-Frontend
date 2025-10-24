@@ -6,7 +6,6 @@ import { Footer } from "./ui/Footer";
 import { LandingPageDisplay } from "./ui/LandingPageDisplay";
 import { ARInstructionsModal } from "./modals/ARInstructionsModal";
 import { useARRenderer } from "../hooks/useARRenderer";
-import { SharedStyles } from "./ui/SharedStyles";
 import { getApi } from "../services/api/ApiProvider";
 
 interface ViewCardProps {}
@@ -105,7 +104,7 @@ export function ViewCard({}: ViewCardProps) {
         : "View Card";
 
   return (
-    <div className="d-flex flex-column min-h-screen">
+    <div className="d-flex flex-column vh-100">
       <div className="container-fluid flex-grow-1 d-flex flex-column justify-content-center align-items-center py-4">
         <LandingPageDisplay
           header={header}
@@ -135,7 +134,6 @@ export function ViewCard({}: ViewCardProps) {
       </div>
 
       <Footer />
-      <SharedStyles />
     </div>
   );
 }

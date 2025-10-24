@@ -12,7 +12,7 @@ export function WizardNav(props: any) {
   };
 
   const getTextClass = (step: number) => {
-    if (step === currentStep) return "text-primary";
+    if (step === currentStep) return "text-secondary";
     if (step < currentStep) return "text-success";
     return "text-muted";
   };
