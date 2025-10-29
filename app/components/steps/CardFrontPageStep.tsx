@@ -106,7 +106,7 @@ export function CardFrontPageStep({
       y: 300 - 20,
       text: "Double click to edit",
       fontSize: 24,
-      fontFamily: "Arial",
+      fontFamily: "sans-serif",
       width: 200,
       fill: "#000000",
       stroke: "#ffffff",
@@ -243,7 +243,7 @@ export function CardFrontPageStep({
                         className="form-select form-select-sm"
                         value={
                           elements.find((el) => el.id === selectedId)
-                            ?.fontFamily || "Arial"
+                            ?.fontFamily || "sans-serif"
                         }
                         onChange={(e) =>
                           updateElement(selectedId, {
@@ -251,53 +251,32 @@ export function CardFrontPageStep({
                           })
                         }
                       >
-                        <option value="Arial" style={{ fontFamily: "Arial" }}>
-                          Arial
+                        <option
+                          value="sans-serif"
+                          style={{ fontFamily: "sans-serif" }}
+                        >
+                          Sans Serif
+                        </option>
+                        <option value="serif" style={{ fontFamily: "serif" }}>
+                          Serif
                         </option>
                         <option
-                          value="Times New Roman"
-                          style={{ fontFamily: "Times New Roman" }}
+                          value="monospace"
+                          style={{ fontFamily: "monospace" }}
                         >
-                          Times New Roman
+                          Monospace
                         </option>
                         <option
-                          value="Georgia"
-                          style={{ fontFamily: "Georgia" }}
+                          value="cursive"
+                          style={{ fontFamily: "cursive" }}
                         >
-                          Georgia
+                          Cursive
                         </option>
                         <option
-                          value="Courier New"
-                          style={{ fontFamily: "Courier New" }}
+                          value="fantasy"
+                          style={{ fontFamily: "fantasy" }}
                         >
-                          Courier New
-                        </option>
-                        <option
-                          value="Verdana"
-                          style={{ fontFamily: "Verdana" }}
-                        >
-                          Verdana
-                        </option>
-                        <option
-                          value="Comic Sans MS"
-                          style={{ fontFamily: "Comic Sans MS" }}
-                        >
-                          Comic Sans MS
-                        </option>
-                        <option value="Impact" style={{ fontFamily: "Impact" }}>
-                          Impact
-                        </option>
-                        <option
-                          value="Trebuchet MS"
-                          style={{ fontFamily: "Trebuchet MS" }}
-                        >
-                          Trebuchet MS
-                        </option>
-                        <option
-                          value="Palatino"
-                          style={{ fontFamily: "Palatino" }}
-                        >
-                          Palatino
+                          Fantasy
                         </option>
                       </select>
                     </div>
