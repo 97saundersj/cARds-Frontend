@@ -1,9 +1,9 @@
 import React from "react";
-import { Stage, Layer, Text, Image, Transformer, Rect } from "react-konva";
 import type { CardData, FrontPageElement } from "../../types/card";
 import Konva from "konva";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import { CanvasEditor } from "../canvas/CanvasEditor";
 
 interface CardFrontPageStepProps {
   cardData: CardData;
@@ -12,6 +12,7 @@ interface CardFrontPageStepProps {
   handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onExportCanvas: (imageUrl: string) => void;
   isUploading: boolean;
+  cardIdentifier: string;
   previousStep?: () => void;
   nextStep?: () => void;
 }
@@ -23,6 +24,7 @@ export function CardFrontPageStep({
   handleFileUpload,
   onExportCanvas,
   isUploading,
+  cardIdentifier,
   previousStep,
   nextStep,
 }: CardFrontPageStepProps) {
@@ -30,91 +32,50 @@ export function CardFrontPageStep({
   const [elements, setElements] = React.useState<FrontPageElement[]>([]);
   const [lastUploadedUrl, setLastUploadedUrl] = React.useState("");
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const [currentCardId, setCurrentCardId] = React.useState(cardIdentifier);
   const stageRef = React.useRef<Konva.Stage>(null);
-  const transformerRef = React.useRef<Konva.Transformer>(null);
-  const layerRef = React.useRef<Konva.Layer>(null);
-
-  const [canvasDimensions, setCanvasDimensions] = React.useState({
-    width: 400,
-    height: 600,
-  });
-  const canvasContainerRef = React.useRef<HTMLDivElement>(null);
-
-  const CANVAS_WIDTH = canvasDimensions.width;
-  const CANVAS_HEIGHT = canvasDimensions.height;
-
-  // Update canvas dimensions on mount and resize
-  React.useEffect(() => {
-    const updateCanvasSize = () => {
-      if (canvasContainerRef.current) {
-        const containerWidth = canvasContainerRef.current.clientWidth;
-        // Maintain 2:3 aspect ratio (400:600)
-        const maxWidth = Math.min(containerWidth - 32, 400); // 32px for padding
-        const height = (maxWidth * 3) / 2;
-        setCanvasDimensions({ width: maxWidth, height });
-      }
-    };
-
-    updateCanvasSize();
-    window.addEventListener("resize", updateCanvasSize);
-    return () => window.removeEventListener("resize", updateCanvasSize);
-  }, []);
 
   const elementsRef = React.useRef(elements);
 
-  // Keep ref in sync with latest elements
   React.useEffect(() => {
     elementsRef.current = elements;
   }, [elements]);
 
-  // Load elements from cardData on mount or when cardData changes
+  // Clear canvas when card changes
+  React.useEffect(() => {
+    if (currentCardId !== cardIdentifier) {
+      setCurrentCardId(cardIdentifier);
+      setElements(cardData.frontPageElements || []);
+      setSelectedId(null);
+      setIsInitialized(true);
+      setLastUploadedUrl("");
+    }
+  }, [cardIdentifier, currentCardId, cardData.frontPageElements]);
+
+  // Load elements from cardData on mount
   React.useEffect(() => {
     const hasElementsInData =
       cardData.frontPageElements && cardData.frontPageElements.length > 0;
     const currentlyHasElements = elements.length > 0;
 
-    // Load from cardData if:
-    // 1. We have data and haven't initialized yet, OR
-    // 2. We have data and currently have no elements (coming back to step)
     if (hasElementsInData && (!isInitialized || !currentlyHasElements)) {
-      console.log("Loading front page elements:", cardData.frontPageElements);
       setElements(cardData.frontPageElements!);
       setIsInitialized(true);
     } else if (!isInitialized && !hasElementsInData) {
-      // Initialize to empty only if we haven't initialized yet and no data
-      console.log("Initializing empty front page");
       setElements([]);
       setIsInitialized(true);
     }
   }, [cardData.frontPageElements, isInitialized, elements.length]);
 
-  // Save elements when component unmounts (navigating away)
+  // Save elements when component unmounts
   React.useEffect(() => {
     return () => {
       handleFrontPageElementsChange(elementsRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleFrontPageElementsChange]);
 
+  // Handle image uploads
   React.useEffect(() => {
-    if (transformerRef.current && layerRef.current) {
-      if (selectedId) {
-        const selectedNode = layerRef.current.findOne(`#${selectedId}`);
-        if (selectedNode) {
-          transformerRef.current.nodes([selectedNode]);
-          transformerRef.current.getLayer()?.batchDraw();
-        }
-      } else {
-        // Clear transformer when nothing is selected
-        transformerRef.current.nodes([]);
-        transformerRef.current.getLayer()?.batchDraw();
-      }
-    }
-  }, [selectedId]);
-
-  React.useEffect(() => {
-    // Only add images from user uploads, not canvas exports
-    // Canvas exports are data URLs (data:image/...), user uploads are HTTP URLs
     const isCanvasExport =
       customImageUrl && customImageUrl.startsWith("data:image");
 
@@ -127,37 +88,33 @@ export function CardFrontPageStep({
       const newElement: FrontPageElement = {
         id: `image-${Date.now()}`,
         type: "image",
-        x: CANVAS_WIDTH / 2 - 75,
-        y: CANVAS_HEIGHT / 2 - 75,
+        x: 200 - 75,
+        y: 300 - 75,
         imageUrl: customImageUrl,
         width: 150,
         height: 150,
       };
       setElements((prev) => [...prev, newElement]);
-      // Selection will be handled by the KonvaImage component once the image loads
     }
-  }, [customImageUrl, lastUploadedUrl, CANVAS_WIDTH, CANVAS_HEIGHT]);
+  }, [customImageUrl, lastUploadedUrl]);
 
   const addTextElement = () => {
     const newElement: FrontPageElement = {
       id: `text-${Date.now()}`,
       type: "text",
-      x: CANVAS_WIDTH / 2 - 50,
-      y: CANVAS_HEIGHT / 2 - 20,
+      x: 200 - 50,
+      y: 300 - 20,
       text: "Double click to edit",
       fontSize: 24,
+      fontFamily: "Arial",
       width: 200,
+      fill: "#000000",
+      stroke: "#ffffff",
+      strokeWidth: 0,
     };
     const newElements = [...elements, newElement];
     setElements(newElements);
     setSelectedId(newElement.id);
-  };
-
-  const updateElement = (id: string, updates: Partial<FrontPageElement>) => {
-    const newElements = elements.map((el) =>
-      el.id === id ? { ...el, ...updates } : el
-    );
-    setElements(newElements);
   };
 
   const deleteSelected = () => {
@@ -196,20 +153,14 @@ export function CardFrontPageStep({
     }
   };
 
-  const handleElementSelect = (id: string) => {
-    setSelectedId(id);
-  };
-
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Deselect when clicking on empty canvas (Stage background)
-    const clickedOnStage = e.target === stageRef.current;
-    if (clickedOnStage) {
-      setSelectedId(null);
-    }
+  const updateElement = (id: string, updates: Partial<FrontPageElement>) => {
+    const newElements = elements.map((el) =>
+      el.id === id ? { ...el, ...updates } : el
+    );
+    setElements(newElements);
   };
 
   const handlePreviousStep = () => {
-    // Save current elements before navigating back
     handleFrontPageElementsChange(elements);
     if (previousStep) {
       previousStep();
@@ -217,14 +168,10 @@ export function CardFrontPageStep({
   };
 
   const handleNextStep = async () => {
-    // Save current elements to parent state
     handleFrontPageElementsChange(elements);
 
     if (stageRef.current && elements.length > 0) {
-      // Clear selection before exporting
       setSelectedId(null);
-
-      // Wait a bit for the transformer to clear
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const dataURL = stageRef.current.toDataURL({
@@ -235,7 +182,6 @@ export function CardFrontPageStep({
       onExportCanvas(dataURL);
     }
 
-    // Proceed to next step
     if (nextStep) {
       nextStep();
     }
@@ -290,30 +236,193 @@ export function CardFrontPageStep({
                 <h6 className="fw-bold mb-2">Selected Element</h6>
                 {elements.find((el) => el.id === selectedId)?.type ===
                   "text" && (
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <label className="form-label small mb-0">Font Size</label>
-                      <span className="badge bg-primary">
-                        {elements.find((el) => el.id === selectedId)
-                          ?.fontSize || 24}
-                        px
-                      </span>
+                  <>
+                    <div className="mb-3">
+                      <label className="form-label small mb-1">Font</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={
+                          elements.find((el) => el.id === selectedId)
+                            ?.fontFamily || "Arial"
+                        }
+                        onChange={(e) =>
+                          updateElement(selectedId, {
+                            fontFamily: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Arial" style={{ fontFamily: "Arial" }}>
+                          Arial
+                        </option>
+                        <option
+                          value="Times New Roman"
+                          style={{ fontFamily: "Times New Roman" }}
+                        >
+                          Times New Roman
+                        </option>
+                        <option
+                          value="Georgia"
+                          style={{ fontFamily: "Georgia" }}
+                        >
+                          Georgia
+                        </option>
+                        <option
+                          value="Courier New"
+                          style={{ fontFamily: "Courier New" }}
+                        >
+                          Courier New
+                        </option>
+                        <option
+                          value="Verdana"
+                          style={{ fontFamily: "Verdana" }}
+                        >
+                          Verdana
+                        </option>
+                        <option
+                          value="Comic Sans MS"
+                          style={{ fontFamily: "Comic Sans MS" }}
+                        >
+                          Comic Sans MS
+                        </option>
+                        <option value="Impact" style={{ fontFamily: "Impact" }}>
+                          Impact
+                        </option>
+                        <option
+                          value="Trebuchet MS"
+                          style={{ fontFamily: "Trebuchet MS" }}
+                        >
+                          Trebuchet MS
+                        </option>
+                        <option
+                          value="Palatino"
+                          style={{ fontFamily: "Palatino" }}
+                        >
+                          Palatino
+                        </option>
+                      </select>
                     </div>
-                    <Slider
-                      min={12}
-                      max={72}
-                      value={
-                        elements.find((el) => el.id === selectedId)?.fontSize ||
-                        24
-                      }
-                      onChange={(value) =>
-                        updateElement(selectedId, {
-                          fontSize:
-                            typeof value === "number" ? value : value[0],
-                        })
-                      }
-                    />
-                  </div>
+
+                    <div className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <label className="form-label small mb-0">
+                          Font Size
+                        </label>
+                        <span className="badge bg-primary">
+                          {elements.find((el) => el.id === selectedId)
+                            ?.fontSize || 24}
+                          px
+                        </span>
+                      </div>
+                      <Slider
+                        min={12}
+                        max={72}
+                        value={
+                          elements.find((el) => el.id === selectedId)
+                            ?.fontSize || 24
+                        }
+                        onChange={(value) =>
+                          updateElement(selectedId, {
+                            fontSize:
+                              typeof value === "number" ? value : value[0],
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label small mb-1">
+                        Text Color
+                      </label>
+                      <input
+                        type="color"
+                        className="form-control form-control-color w-100"
+                        value={
+                          elements.find((el) => el.id === selectedId)?.fill ||
+                          "#000000"
+                        }
+                        onChange={(e) =>
+                          updateElement(selectedId, { fill: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="outlineCheckbox"
+                          checked={
+                            (elements.find((el) => el.id === selectedId)
+                              ?.strokeWidth || 0) > 0
+                          }
+                          onChange={(e) =>
+                            updateElement(selectedId, {
+                              strokeWidth: e.target.checked ? 1 : 0,
+                              stroke: e.target.checked ? "#ffffff" : "#000000",
+                            })
+                          }
+                        />
+                        <label
+                          className="form-check-label small"
+                          htmlFor="outlineCheckbox"
+                        >
+                          Outline
+                        </label>
+                      </div>
+                    </div>
+
+                    {(elements.find((el) => el.id === selectedId)
+                      ?.strokeWidth || 0) > 0 && (
+                      <>
+                        <div className="mb-3">
+                          <label className="form-label small mb-1">
+                            Outline Color
+                          </label>
+                          <input
+                            type="color"
+                            className="form-control form-control-color w-100"
+                            value={
+                              elements.find((el) => el.id === selectedId)
+                                ?.stroke || "#000000"
+                            }
+                            onChange={(e) =>
+                              updateElement(selectedId, {
+                                stroke: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <label className="form-label small mb-0">
+                              Outline Width
+                            </label>
+                            <span className="badge bg-primary">
+                              {elements.find((el) => el.id === selectedId)
+                                ?.strokeWidth || 1}
+                              px
+                            </span>
+                          </div>
+                          <Slider
+                            min={1}
+                            max={4}
+                            value={
+                              elements.find((el) => el.id === selectedId)
+                                ?.strokeWidth || 1
+                            }
+                            onChange={(value) =>
+                              updateElement(selectedId, {
+                                strokeWidth:
+                                  typeof value === "number" ? value : value[0],
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
 
                 <div className="mb-3">
@@ -361,76 +470,13 @@ export function CardFrontPageStep({
         <div className="col-md-8 mt-4 mt-md-0">
           <div className="border rounded bg-white p-3">
             <h6 className="fw-bold mb-3 text-muted">Canvas</h6>
-            <div
-              ref={canvasContainerRef}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                overflow: "hidden",
-              }}
-            >
-              <Stage
-                ref={stageRef}
-                width={CANVAS_WIDTH}
-                height={CANVAS_HEIGHT}
-                style={{
-                  border: "2px solid #dee2e6",
-                  background: "white",
-                  maxWidth: "100%",
-                }}
-                onClick={handleStageClick}
-                onTap={handleStageClick}
-              >
-                <Layer ref={layerRef}>
-                  {/* White background rectangle */}
-                  <Rect
-                    x={0}
-                    y={0}
-                    width={CANVAS_WIDTH}
-                    height={CANVAS_HEIGHT}
-                    fill="white"
-                  />
-                  {elements.map((element) => {
-                    if (element.type === "text") {
-                      return (
-                        <EditableText
-                          key={element.id}
-                          element={element}
-                          isSelected={element.id === selectedId}
-                          onSelect={() => handleElementSelect(element.id)}
-                          onChange={(updates) =>
-                            updateElement(element.id, updates)
-                          }
-                        />
-                      );
-                    } else if (element.type === "image") {
-                      return (
-                        <KonvaImage
-                          key={element.id}
-                          element={element}
-                          isSelected={element.id === selectedId}
-                          onSelect={() => handleElementSelect(element.id)}
-                          onChange={(updates) =>
-                            updateElement(element.id, updates)
-                          }
-                        />
-                      );
-                    }
-                    return null;
-                  })}
-                  <Transformer
-                    ref={transformerRef}
-                    boundBoxFunc={(oldBox, newBox) => {
-                      if (newBox.width < 10 || newBox.height < 10) {
-                        return oldBox;
-                      }
-                      return newBox;
-                    }}
-                  />
-                </Layer>
-              </Stage>
-            </div>
+            <CanvasEditor
+              ref={stageRef}
+              elements={elements}
+              selectedId={selectedId}
+              onElementsChange={setElements}
+              onSelectElement={setSelectedId}
+            />
           </div>
         </div>
       </div>
@@ -444,225 +490,5 @@ export function CardFrontPageStep({
         </button>
       </div>
     </div>
-  );
-}
-
-interface EditableTextProps {
-  element: FrontPageElement;
-  isSelected: boolean;
-  onSelect: () => void;
-  onChange: (updates: Partial<FrontPageElement>) => void;
-}
-
-function EditableText({
-  element,
-  isSelected,
-  onSelect,
-  onChange,
-}: EditableTextProps) {
-  const textRef = React.useRef<Konva.Text>(null);
-  const [isEditing, setIsEditing] = React.useState(false);
-
-  const handleDblClick = (e?: any) => {
-    // Prevent default behavior that might cause scrolling on mobile
-    if (e && e.evt) {
-      e.evt.preventDefault();
-    }
-    setIsEditing(true);
-    onSelect();
-  };
-
-  React.useEffect(() => {
-    if (isEditing && textRef.current) {
-      const textNode = textRef.current;
-      const stage = textNode.getStage();
-      if (!stage) return;
-
-      const textPosition = textNode.absolutePosition();
-      const stageBox = stage.container().getBoundingClientRect();
-
-      // Store current scroll position to prevent unwanted scrolling
-      const scrollX = window.scrollX || window.pageXOffset;
-      const scrollY = window.scrollY || window.pageYOffset;
-
-      const textarea = document.createElement("textarea");
-      document.body.appendChild(textarea);
-
-      textarea.value = element.text || "";
-      textarea.style.position = "fixed";
-      textarea.style.top = `${stageBox.top + textPosition.y}px`;
-      textarea.style.left = `${stageBox.left + textPosition.x}px`;
-      textarea.style.width = `${textNode.width()}px`;
-      textarea.style.fontSize = `${element.fontSize}px`;
-      textarea.style.border = "2px solid #007bff";
-      textarea.style.padding = "4px";
-      textarea.style.margin = "0";
-      textarea.style.overflow = "hidden";
-      textarea.style.background = "white";
-      textarea.style.outline = "none";
-      textarea.style.resize = "none";
-      textarea.style.lineHeight = "1.2";
-      textarea.style.fontFamily = "Arial";
-      textarea.style.color = "black";
-      textarea.style.zIndex = "1000";
-      textarea.style.touchAction = "manipulation";
-      textarea.style.textAlign = "center";
-
-      // Focus without scrolling
-      textarea.focus({ preventScroll: true });
-      textarea.select();
-
-      // Restore scroll position if it changed
-      window.scrollTo(scrollX, scrollY);
-
-      const removeTextarea = () => {
-        if (textarea.parentNode) {
-          textarea.parentNode.removeChild(textarea);
-        }
-        setIsEditing(false);
-      };
-
-      textarea.addEventListener("blur", () => {
-        onChange({ text: textarea.value });
-        removeTextarea();
-      });
-
-      textarea.addEventListener("keydown", (e) => {
-        // Allow normal text editing (backspace, delete, etc.)
-        // Only handle special keys
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          onChange({ text: textarea.value });
-          removeTextarea();
-        } else if (e.key === "Escape") {
-          e.preventDefault();
-          removeTextarea();
-        }
-        // Let all other keys (including backspace, delete) work normally
-        // Don't call e.stopPropagation() or e.preventDefault() for text editing keys
-      });
-
-      return removeTextarea;
-    }
-  }, [isEditing]);
-
-  return (
-    <Text
-      ref={textRef}
-      id={element.id}
-      x={element.x}
-      y={element.y}
-      text={element.text}
-      fontSize={element.fontSize}
-      draggable
-      width={element.width}
-      rotation={element.rotation}
-      align="center"
-      onClick={onSelect}
-      onTap={onSelect}
-      onDblClick={handleDblClick}
-      onDblTap={handleDblClick}
-      onDragStart={onSelect}
-      onDragEnd={(e) => {
-        onChange({
-          x: e.target.x(),
-          y: e.target.y(),
-        });
-      }}
-      onTransformEnd={(e) => {
-        const node = e.target;
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
-
-        node.scaleX(1);
-        node.scaleY(1);
-
-        onChange({
-          x: node.x(),
-          y: node.y(),
-          width: Math.max(node.width() * scaleX, 20),
-          rotation: node.rotation(),
-        });
-      }}
-    />
-  );
-}
-
-interface KonvaImageProps {
-  element: FrontPageElement;
-  isSelected: boolean;
-  onSelect: () => void;
-  onChange: (updates: Partial<FrontPageElement>) => void;
-}
-
-function KonvaImage({
-  element,
-  isSelected,
-  onSelect,
-  onChange,
-}: KonvaImageProps) {
-  const [image, setImage] = React.useState<HTMLImageElement | null>(null);
-  const [isNewlyAdded, setIsNewlyAdded] = React.useState(true);
-  const imageRef = React.useRef<Konva.Image>(null);
-
-  React.useEffect(() => {
-    if (element.imageUrl) {
-      const img = new window.Image();
-      img.crossOrigin = "anonymous";
-      img.src = element.imageUrl;
-      img.onload = () => {
-        setImage(img);
-        // Auto-select newly added images once they load
-        if (isNewlyAdded) {
-          setTimeout(() => {
-            onSelect();
-            setIsNewlyAdded(false);
-          }, 10);
-        }
-      };
-    }
-  }, [element.imageUrl, isNewlyAdded, onSelect]);
-
-  if (!image) {
-    return null;
-  }
-
-  return (
-    <Image
-      ref={imageRef}
-      id={element.id}
-      image={image}
-      x={element.x}
-      y={element.y}
-      width={element.width}
-      height={element.height}
-      rotation={element.rotation}
-      draggable
-      onClick={onSelect}
-      onTap={onSelect}
-      onDragStart={onSelect}
-      onDragEnd={(e) => {
-        onChange({
-          x: e.target.x(),
-          y: e.target.y(),
-        });
-      }}
-      onTransformEnd={(e) => {
-        const node = e.target;
-        const scaleX = node.scaleX();
-        const scaleY = node.scaleY();
-
-        node.scaleX(1);
-        node.scaleY(1);
-
-        onChange({
-          x: node.x(),
-          y: node.y(),
-          width: Math.max(node.width() * scaleX, 20),
-          height: Math.max(node.height() * scaleY, 20),
-          rotation: node.rotation(),
-        });
-      }}
-    />
   );
 }

@@ -8,6 +8,10 @@ export interface FrontPageElement {
   rotation?: number;
   text?: string;
   fontSize?: number;
+  fontFamily?: string;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
   imageUrl?: string;
 }
 

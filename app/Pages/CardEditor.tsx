@@ -70,6 +70,10 @@ export function CardEditor() {
 
             if (isCustomImage) {
               setCustomImageUrl(savedCardData.cardImage);
+              // If it's a canvas export (data URL), also set frontPageCanvasImage
+              if (savedCardData.cardImage.startsWith("data:image")) {
+                setFrontPageCanvasImage(savedCardData.cardImage);
+              }
               setCardData({
                 ...savedCardData,
                 cardImage: "custom",
@@ -104,6 +108,7 @@ export function CardEditor() {
       });
       setCustomImageUrl("");
       setShowCustomImageInput(false);
+      setFrontPageCanvasImage("");
       return;
     }
 
@@ -122,6 +127,12 @@ export function CardEditor() {
 
       if (isCustomImage) {
         setCustomImageUrl(savedCard.data.cardImage);
+        // If it's a canvas export (data URL), also set frontPageCanvasImage
+        if (savedCard.data.cardImage.startsWith("data:image")) {
+          setFrontPageCanvasImage(savedCard.data.cardImage);
+        } else {
+          setFrontPageCanvasImage("");
+        }
         setCardData({
           ...savedCard.data,
           cardImage: "custom",
@@ -129,6 +140,7 @@ export function CardEditor() {
         setShowCustomImageInput(true);
       } else {
         setShowCustomImageInput(false);
+        setFrontPageCanvasImage("");
       }
     }
   };
@@ -159,6 +171,7 @@ export function CardEditor() {
       });
       setCustomImageUrl("");
       setShowCustomImageInput(false);
+      setFrontPageCanvasImage("");
     }
   };
 
@@ -356,6 +369,7 @@ export function CardEditor() {
             handleFileUpload={handleFrontPageImageUpload}
             onExportCanvas={handleFrontPageCanvasExport}
             isUploading={isUploading}
+            cardIdentifier={selectedSessionCardId || currentCardId || "new"}
           />
 
           <ARCardStep
