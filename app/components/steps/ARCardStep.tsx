@@ -7,12 +7,11 @@ interface ARCardStepProps {
   customImageUrl: string;
   showCustomImageInput: boolean;
   isUploading: boolean;
-  isSavingCard: boolean;
   handleInputChange: (field: keyof CardData, value: string) => void;
   handleCardImageChange: (value: string) => void;
   handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleGenerateCard: () => void;
   previousStep?: () => void;
+  nextStep?: () => void;
 }
 
 export function ARCardStep({
@@ -20,12 +19,11 @@ export function ARCardStep({
   customImageUrl,
   showCustomImageInput,
   isUploading,
-  isSavingCard,
   handleInputChange,
   handleCardImageChange,
   handleFileUpload,
-  handleGenerateCard,
   previousStep,
+  nextStep,
 }: ARCardStepProps) {
   return (
     <div>
@@ -169,12 +167,8 @@ export function ARCardStep({
         <button className="btn btn-secondary" onClick={previousStep}>
           <i className="fas fa-arrow-left me-1" /> Back
         </button>
-        <button
-          className="btn btn-primary"
-          onClick={handleGenerateCard}
-          disabled={isUploading || isSavingCard}
-        >
-          {isSavingCard ? "Generating..." : "Generate Card"}
+        <button className="btn btn-primary" onClick={nextStep}>
+          Next <i className="fas fa-arrow-right ms-1" />
         </button>
       </div>
     </div>

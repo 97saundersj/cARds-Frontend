@@ -2,15 +2,15 @@ import React from "react";
 import { useNavigate } from "react-router";
 import StepWizard from "react-step-wizard";
 import type { CardData } from "../types/card";
-import { Navbar } from "./ui/Navbar";
-import { Footer } from "./ui/Footer";
-import { CardLinkModal } from "./modals/CardLinkModal";
+import { Navbar } from "../components/ui/Navbar";
+import { Footer } from "../components/ui/Footer";
+import { CardLinkModal } from "../components/modals/CardLinkModal";
 import { getApi } from "../services/api/ApiProvider";
 import { sessionCards } from "../services/storage/sessionCards";
-import { WizardNav } from "./ui/WizardNav";
-import { CardManagementStep } from "./steps/CardManagementStep";
-import { LandingPageStep } from "./steps/LandingPageStep";
-import { ARCardStep } from "./steps/ARCardStep";
+import { WizardNav } from "../components/ui/WizardNav";
+import { CardManagementStep } from "../components/steps/CardManagementStep";
+import { LandingPageStep } from "../components/steps/LandingPageStep";
+import { ARCardStep } from "../components/steps/ARCardStep";
 
 export function CardEditor() {
   const navigate = useNavigate();
@@ -294,16 +294,13 @@ export function CardEditor() {
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
 
-      <div
-        className="container-fluid d-flex flex-column align-items-center py-4"
-        style={{ overflow: "hidden" }}
-      >
-        <h5 className="text-muted mb-4">
+      <div className="container-xxl py-4" style={{ overflow: "hidden" }}>
+        <h5 className="text-muted mb-4 text-center">
           Create your own web based Augmented Reality greeting cards for any
           occasion!
         </h5>
 
-        <StepWizard nav={<WizardNav />} className="step-wizard">
+        <StepWizard nav={<WizardNav />}>
           <CardManagementStep
             cardName={cardName}
             setCardName={setCardName}
@@ -313,20 +310,22 @@ export function CardEditor() {
             handleDeleteFromSession={handleDeleteFromSession}
           />
 
-          <LandingPageStep
-            cardData={cardData}
-            handleInputChange={handleInputChange}
-          />
-
           <ARCardStep
             cardData={cardData}
             customImageUrl={customImageUrl}
             showCustomImageInput={showCustomImageInput}
             isUploading={isUploading}
-            isSavingCard={isSavingCard}
             handleInputChange={handleInputChange}
             handleCardImageChange={handleCardImageChange}
             handleFileUpload={handleFileUpload}
+          />
+
+          <LandingPageStep
+            cardData={cardData}
+            customImageUrl={customImageUrl}
+            handleInputChange={handleInputChange}
+            isUploading={isUploading}
+            isSavingCard={isSavingCard}
             handleGenerateCard={handleGenerateCard}
           />
         </StepWizard>

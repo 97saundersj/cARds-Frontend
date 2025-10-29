@@ -55,7 +55,7 @@ export function CardManagementStep({
             type="text"
             className="form-control"
             id="cardNameInput"
-            placeholder="Enter a name for your card (e.g., Mom's Birthday Card)"
+            placeholder="Name your card (e.g., Mom's Birthday Card)"
             value={cardName}
             onChange={(e) => setCardName(e.target.value)}
           />

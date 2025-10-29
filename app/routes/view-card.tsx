@@ -1,5 +1,5 @@
 import type { Route } from "./+types/view-card";
-import { ViewCard } from "../components/ViewCard";
+import { ViewCard } from "../Pages/ViewCard";
 
 export function meta({}: Route.MetaArgs) {
   return [

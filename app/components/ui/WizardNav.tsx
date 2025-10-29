@@ -1,6 +1,6 @@
 import React from "react";
 
-const STEP_LABELS = ["Card Management", "Landing Page", "AR Card"];
+const STEP_LABELS = ["Card Management", "AR Card", "Landing Page"];
 
 export function WizardNav(props: any) {
   const { currentStep = 1, totalSteps = 3, goToStep } = props;
@@ -26,20 +26,22 @@ export function WizardNav(props: any) {
 
           return (
             <React.Fragment key={step}>
-              <div
-                className={`d-flex align-items-center flex-fill ${
-                  isClickable ? "cursor-pointer" : "opacity-50"
-                }`}
-                onClick={() => isClickable && goToStep?.(step)}
-              >
-                <div
-                  className={`rounded-circle d-flex align-items-center justify-content-center text-white fw-bold ${getStepClass(
-                    step
-                  )}`}
-                  style={{ width: 40, height: 40 }}
+              <div className="d-flex align-items-center">
+                <button
+                  type="button"
+                  className={`btn border-0 p-0 bg-transparent`}
+                  disabled={!isClickable}
+                  onClick={() => goToStep?.(step)}
                 >
-                  {step < currentStep ? <i className="fas fa-check" /> : step}
-                </div>
+                  <div
+                    className={`rounded-circle d-flex align-items-center justify-content-center text-white fw-bold ${getStepClass(
+                      step
+                    )}`}
+                    style={{ width: 40, height: 40 }}
+                  >
+                    {step < currentStep ? <i className="fas fa-check" /> : step}
+                  </div>
+                </button>
                 <div
                   className={`ms-2 d-none d-md-block fw-bold ${getTextClass(step)}`}
                 >
@@ -48,10 +50,10 @@ export function WizardNav(props: any) {
               </div>
               {step < totalSteps && (
                 <div
-                  className={`flex-grow-1 mx-2 opacity-50 ${
+                  className={`flex-grow-1 mx-3 opacity-50 ${
                     step < currentStep ? "bg-success" : "bg-secondary"
                   }`}
-                  style={{ height: 2, maxWidth: 100 }}
+                  style={{ height: 2 }}
                 />
               )}
             </React.Fragment>

@@ -1,19 +1,24 @@
-import React from "react";
 import type { CardData } from "../../types/card";
 import { LandingPageDisplay } from "../ui/LandingPageDisplay";
 
 interface LandingPageStepProps {
   cardData: CardData;
+  customImageUrl: string;
   handleInputChange: (field: keyof CardData, value: string) => void;
-  nextStep?: () => void;
   previousStep?: () => void;
+  isUploading: boolean;
+  isSavingCard: boolean;
+  handleGenerateCard: () => void;
 }
 
 export function LandingPageStep({
   cardData,
+  customImageUrl,
   handleInputChange,
-  nextStep,
   previousStep,
+  isUploading,
+  isSavingCard,
+  handleGenerateCard,
 }: LandingPageStepProps) {
   return (
     <div>
@@ -64,7 +69,6 @@ export function LandingPageStep({
               <LandingPageDisplay
                 header={cardData.header}
                 message={cardData.message}
-                buttonDisabled={true}
                 isPreview={true}
               />
             </div>
@@ -76,8 +80,12 @@ export function LandingPageStep({
         <button className="btn btn-secondary" onClick={previousStep}>
           <i className="fas fa-arrow-left me-1" /> Back
         </button>
-        <button className="btn btn-primary" onClick={nextStep}>
-          Next <i className="fas fa-arrow-right ms-1" />
+        <button
+          className="btn btn-primary"
+          onClick={handleGenerateCard}
+          disabled={isUploading || isSavingCard}
+        >
+          {isSavingCard ? "Generating..." : "Generate Card"}
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { CardEditor } from "../components/CardEditor";
+import { CardEditor } from "../Pages/CardEditor";
 
 export function meta({}: Route.MetaArgs) {
   return [
