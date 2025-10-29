@@ -1,9 +1,14 @@
 import React from "react";
 
-const STEP_LABELS = ["Card Management", "AR Card", "Landing Page"];
+const STEP_LABELS = [
+  "Card Management",
+  "Card Front",
+  "AR Card",
+  "Landing Page",
+];
 
 export function WizardNav(props: any) {
-  const { currentStep = 1, totalSteps = 3, goToStep } = props;
+  const { currentStep = 1, totalSteps = 4, goToStep } = props;
 
   const getStepClass = (step: number) => {
     if (step === currentStep) return "bg-primary";

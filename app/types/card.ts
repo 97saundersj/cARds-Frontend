@@ -1,3 +1,16 @@
+export interface FrontPageElement {
+  id: string;
+  type: "text" | "image";
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+  text?: string;
+  fontSize?: number;
+  imageUrl?: string;
+}
+
 export interface CardData {
   cardName?: string;
   header: string;
@@ -6,6 +19,7 @@ export interface CardData {
   cardTop: string;
   cardMiddle: string;
   cardBottom: string;
+  frontPageElements?: FrontPageElement[];
 }
 
 export interface UnityCardData {

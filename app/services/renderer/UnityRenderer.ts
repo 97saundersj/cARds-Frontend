@@ -107,10 +107,30 @@ class UnityRenderer implements IARRenderer {
   }
 
   updateCardData(data: UnityCardData): void {
-    if (!this.loaded) return;
+    if (!this.loaded || !this.instance) {
+      console.warn("Unity not loaded, cannot update card data");
+      return;
+    }
 
     try {
-      this.instance.SendMessage("Card", "UpdateCardText", JSON.stringify(data));
+      // Ensure all text fields have values
+      const safeData = {
+        cardImage: data.cardImage || "birthday",
+        cardTop: data.cardTop || "",
+        cardMiddle: data.cardMiddle || "",
+        cardBottom: data.cardBottom || "",
+      };
+
+      console.log("Sending card data to Unity:", {
+        ...safeData,
+        cardImage: safeData.cardImage.substring(0, 50) + "...", // Log truncated for readability
+      });
+
+      this.instance.SendMessage(
+        "Card",
+        "UpdateCardText",
+        JSON.stringify(safeData)
+      );
     } catch (error) {
       console.error("Failed to send data to Unity:", error);
     }

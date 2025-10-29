@@ -9,6 +9,7 @@ import { getApi } from "../services/api/ApiProvider";
 import { sessionCards } from "../services/storage/sessionCards";
 import { WizardNav } from "../components/ui/WizardNav";
 import { CardManagementStep } from "../components/steps/CardManagementStep";
+import { CardFrontPageStep } from "../components/steps/CardFrontPageStep";
 import { LandingPageStep } from "../components/steps/LandingPageStep";
 import { ARCardStep } from "../components/steps/ARCardStep";
 
@@ -28,10 +29,12 @@ export function CardEditor() {
     cardTop: "Dear John,",
     cardMiddle: "Have a great birthday!",
     cardBottom: "Love Jane",
+    frontPageElements: [],
   });
   const [customImageUrl, setCustomImageUrl] = React.useState("");
   const [showCustomImageInput, setShowCustomImageInput] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [frontPageCanvasImage, setFrontPageCanvasImage] = React.useState("");
   const [showModal, setShowModal] = React.useState(false);
   const [generatedUrl, setGeneratedUrl] = React.useState("");
   const [isSavingCard, setIsSavingCard] = React.useState(false);
@@ -97,6 +100,7 @@ export function CardEditor() {
         cardTop: "Dear John,",
         cardMiddle: "Have a great birthday!",
         cardBottom: "Love Jane",
+        frontPageElements: [],
       });
       setCustomImageUrl("");
       setShowCustomImageInput(false);
@@ -151,6 +155,7 @@ export function CardEditor() {
         cardTop: "Dear John,",
         cardMiddle: "Have a great birthday!",
         cardBottom: "Love Jane",
+        frontPageElements: [],
       });
       setCustomImageUrl("");
       setShowCustomImageInput(false);
@@ -163,6 +168,16 @@ export function CardEditor() {
       [field]: value,
     }));
   };
+
+  const handleFrontPageElementsChange = React.useCallback(
+    (elements: CardData["frontPageElements"]) => {
+      setCardData((prev) => ({
+        ...prev,
+        frontPageElements: elements,
+      }));
+    },
+    []
+  );
 
   const handleCardImageChange = (value: string) => {
     setCardData((prev) => ({
@@ -195,6 +210,26 @@ export function CardEditor() {
     }
   };
 
+  const handleFrontPageImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    await handleFileUpload(event);
+    event.target.value = "";
+  };
+
+  const handleFrontPageCanvasExport = (imageUrl: string) => {
+    // Store the canvas export separately
+    setFrontPageCanvasImage(imageUrl);
+    // Also set customImageUrl so it's available for the AR card
+    setCustomImageUrl(imageUrl);
+    // Set it as the custom image for the AR card
+    setCardData((prev) => ({
+      ...prev,
+      cardImage: "custom",
+    }));
+    setShowCustomImageInput(true);
+  };
+
   const handleGenerateCard = async () => {
     setIsSavingCard(true);
     try {
@@ -204,7 +239,9 @@ export function CardEditor() {
         ...cardData,
         cardName: cardName || undefined,
         cardImage:
-          cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
+          cardData.cardImage === "custom"
+            ? frontPageCanvasImage
+            : cardData.cardImage,
       };
 
       // Save to session if card has a name
@@ -272,7 +309,9 @@ export function CardEditor() {
         ...cardData,
         cardName: cardName || undefined,
         cardImage:
-          cardData.cardImage === "custom" ? customImageUrl : cardData.cardImage,
+          cardData.cardImage === "custom"
+            ? frontPageCanvasImage
+            : cardData.cardImage,
       };
 
       const result = await api.saveCard(cardDataToSave, currentCardId);
@@ -310,14 +349,19 @@ export function CardEditor() {
             handleDeleteFromSession={handleDeleteFromSession}
           />
 
+          <CardFrontPageStep
+            cardData={cardData}
+            handleFrontPageElementsChange={handleFrontPageElementsChange}
+            customImageUrl={customImageUrl}
+            handleFileUpload={handleFrontPageImageUpload}
+            onExportCanvas={handleFrontPageCanvasExport}
+            isUploading={isUploading}
+          />
+
           <ARCardStep
             cardData={cardData}
-            customImageUrl={customImageUrl}
-            showCustomImageInput={showCustomImageInput}
-            isUploading={isUploading}
+            frontPageCanvasImage={frontPageCanvasImage}
             handleInputChange={handleInputChange}
-            handleCardImageChange={handleCardImageChange}
-            handleFileUpload={handleFileUpload}
           />
 
           <LandingPageStep

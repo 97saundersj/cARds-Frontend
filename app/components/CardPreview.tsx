@@ -28,9 +28,15 @@ export function CardPreview({
   React.useEffect(() => {
     if (mode === "inline" && isLoaded && renderer && isOpen && cardData) {
       console.log("Card data changed in preview, sending to renderer");
-      setTimeout(() => {
-        renderer.updateCardData(cardDataRef.current!);
-      }, 100);
+
+      // Add a longer delay to ensure Unity is fully initialized
+      const timeoutId = setTimeout(() => {
+        if (cardDataRef.current && renderer.isLoaded()) {
+          renderer.updateCardData(cardDataRef.current);
+        }
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [cardData, isLoaded, renderer, isOpen, mode]);
 

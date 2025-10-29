@@ -4,24 +4,16 @@ import { CardPreview } from "../CardPreview";
 
 interface ARCardStepProps {
   cardData: CardData;
-  customImageUrl: string;
-  showCustomImageInput: boolean;
-  isUploading: boolean;
+  frontPageCanvasImage: string;
   handleInputChange: (field: keyof CardData, value: string) => void;
-  handleCardImageChange: (value: string) => void;
-  handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   previousStep?: () => void;
   nextStep?: () => void;
 }
 
 export function ARCardStep({
   cardData,
-  customImageUrl,
-  showCustomImageInput,
-  isUploading,
+  frontPageCanvasImage,
   handleInputChange,
-  handleCardImageChange,
-  handleFileUpload,
   previousStep,
   nextStep,
 }: ARCardStepProps) {
@@ -33,68 +25,6 @@ export function ARCardStep({
       <div className="row">
         <div className="col-md-6">
           <div className="border p-3 rounded bg-light">
-            {/* Card Image Selector */}
-            <div className="mb-3">
-              <label htmlFor="cardImageInput" className="form-label">
-                Card Image
-              </label>
-              <select
-                className="form-select"
-                id="cardImageInput"
-                value={cardData.cardImage}
-                onChange={(e) => handleCardImageChange(e.target.value)}
-              >
-                <option value="birthday">Birthday</option>
-                <option value="valentine">Valentine's Day</option>
-                <option value="halloween">Halloween</option>
-                <option value="christmas">Christmas</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
-
-            {showCustomImageInput && (
-              <div className="mb-3">
-                <label htmlFor="customImageFile" className="form-label">
-                  Image
-                </label>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <input
-                    type="file"
-                    className="form-control"
-                    id="customImageFile"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                  />
-                  {isUploading && (
-                    <i
-                      className="fas fa-spinner fa-spin"
-                      style={{ marginLeft: "10px" }}
-                    />
-                  )}
-                </div>
-                {customImageUrl && (
-                  <div className="mt-3">
-                    <div className="border rounded p-2 bg-white d-inline-block">
-                      <img
-                        src={customImageUrl}
-                        alt="Custom card preview"
-                        style={{
-                          maxWidth: "200px",
-                          maxHeight: "200px",
-                          display: "block",
-                        }}
-                      />
-                    </div>
-
-                    <small className="text-muted d-block mb-2">
-                      Image uploaded successfully!
-                    </small>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Card Text Form */}
             <div className="mb-3">
               <label htmlFor="cardTopInput" className="form-label">
@@ -151,12 +81,12 @@ export function ARCardStep({
               mode="inline"
               cardData={{
                 cardImage:
-                  cardData.cardImage === "custom"
-                    ? customImageUrl
+                  cardData.cardImage === "custom" && frontPageCanvasImage
+                    ? frontPageCanvasImage
                     : cardData.cardImage,
-                cardTop: cardData.cardTop,
-                cardMiddle: cardData.cardMiddle,
-                cardBottom: cardData.cardBottom,
+                cardTop: cardData.cardTop || "Top Text",
+                cardMiddle: cardData.cardMiddle || "Middle Text",
+                cardBottom: cardData.cardBottom || "Bottom Text",
               }}
             />
           </div>
