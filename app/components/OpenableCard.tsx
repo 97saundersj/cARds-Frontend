@@ -32,6 +32,9 @@ export function OpenableCard() {
   const shiftStartY = useRef<number | null>(null);
   const xrGrabOffset = useRef<THREE.Vector3 | null>(null);
   const xrInitialScale = useRef<number>(0.5);
+  const activeTouches = useRef<Map<number, { x: number; y: number }>>(
+    new Map()
+  );
 
   useEffect(() => {
     // Initialize rotation to ensure card starts closed
@@ -56,8 +59,47 @@ export function OpenableCard() {
       }
     };
 
+    const handleTouchStart = (event: TouchEvent) => {
+      // Track all touch points
+      for (let i = 0; i < event.touches.length; i++) {
+        const touch = event.touches[i];
+        activeTouches.current.set(touch.identifier, {
+          x: touch.clientX,
+          y: touch.clientY,
+        });
+      }
+
+      // Initialize pinch distance if two touches
+      if (event.touches.length === 2) {
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        lastPinchDistance.current = distance;
+      }
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      // Remove ended touches
+      const remainingIds = new Set(
+        Array.from(event.touches).map((t) => t.identifier)
+      );
+      for (const id of activeTouches.current.keys()) {
+        if (!remainingIds.has(id)) {
+          activeTouches.current.delete(id);
+        }
+      }
+
+      // Reset pinch if less than 2 touches
+      if (event.touches.length < 2) {
+        lastPinchDistance.current = null;
+      }
+    };
+
     const handleGlobalMove = (event: PointerEvent | TouchEvent) => {
-      // Handle pinch zoom on real devices
+      // Handle pinch zoom with two touches
       if ("touches" in event && event.touches.length === 2) {
         event.preventDefault();
         const touch1 = event.touches[0];
@@ -69,7 +111,8 @@ export function OpenableCard() {
 
         if (lastPinchDistance.current !== null) {
           const delta = distance - lastPinchDistance.current;
-          const scaleFactor = 1 + delta * 0.01;
+          // Increased sensitivity for better pinch response
+          const scaleFactor = 1 + delta * 0.005;
           setCardScale((prev) =>
             Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev * scaleFactor))
           );
@@ -140,6 +183,7 @@ export function OpenableCard() {
       lastPinchDistance.current = null;
       isShiftPinching.current = false;
       shiftStartY.current = null;
+      activeTouches.current.clear();
       setDragPlanePoint(null);
       setTimeout(() => setIsDragging(false), 100);
     };
@@ -155,11 +199,12 @@ export function OpenableCard() {
     canvas.addEventListener("pointermove", handleGlobalMove as any);
     canvas.addEventListener("pointerup", handleGlobalUp);
     canvas.addEventListener("pointercancel", handleGlobalUp);
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
     canvas.addEventListener("touchmove", handleGlobalMove as any, {
       passive: false,
     });
-    canvas.addEventListener("touchend", handleGlobalUp);
-    canvas.addEventListener("touchcancel", handleGlobalUp);
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", handleTouchEnd, { passive: false });
     canvas.addEventListener("wheel", handleWheel, { passive: false });
     canvas.addEventListener("mousedown", preventBrowserZoom, {
       passive: false,
@@ -179,9 +224,10 @@ export function OpenableCard() {
       canvas.removeEventListener("pointermove", handleGlobalMove as any);
       canvas.removeEventListener("pointerup", handleGlobalUp);
       canvas.removeEventListener("pointercancel", handleGlobalUp);
+      canvas.removeEventListener("touchstart", handleTouchStart);
       canvas.removeEventListener("touchmove", handleGlobalMove as any);
-      canvas.removeEventListener("touchend", handleGlobalUp);
-      canvas.removeEventListener("touchcancel", handleGlobalUp);
+      canvas.removeEventListener("touchend", handleTouchEnd);
+      canvas.removeEventListener("touchcancel", handleTouchEnd);
       canvas.removeEventListener("wheel", handleWheel);
       canvas.removeEventListener("mousedown", preventBrowserZoom);
       canvas.removeEventListener("mousemove", preventBrowserZoom);
@@ -222,8 +268,9 @@ export function OpenableCard() {
     setIsDragging(false);
     isDraggingRef.current = true;
 
-    // Handle XR controller grab (VR headsets)
-    if (session && e.ray?.origin) {
+    // Handle XR controller grab (VR headsets with controllers)
+    // Only use ray-based movement if there's an actual controller ray
+    if (session && e.ray?.origin && e.inputSource?.handedness !== "none") {
       const controllerPos = new THREE.Vector3();
       controllerPos.copy(e.ray.origin);
       xrGrabOffset.current = cardPosition.clone().sub(controllerPos);
@@ -243,15 +290,35 @@ export function OpenableCard() {
   const handlePointerMove = (e: any) => {
     if (!isDraggingRef.current) return;
 
-    // Handle XR controller movement (VR headsets only)
-    if (session && xrGrabOffset.current && e.ray?.origin) {
+    // Handle XR controller movement (VR headsets with controllers only)
+    if (
+      session &&
+      xrGrabOffset.current &&
+      e.ray?.origin &&
+      e.inputSource?.handedness !== "none"
+    ) {
       e.stopPropagation();
       const controllerPos = new THREE.Vector3();
       controllerPos.copy(e.ray.origin);
       const newPos = controllerPos.add(xrGrabOffset.current);
       setCardPosition(newPos);
+      return;
     }
-    // Mobile AR and regular mode use the global event listeners
+
+    // Mobile AR touch drag - use the intersection point directly
+    if (e.point && lastPointRef.current) {
+      const deltaX = e.point.x - lastPointRef.current.x;
+      const deltaY = e.point.y - lastPointRef.current.y;
+
+      setCardPosition((prev) => {
+        const newPos = prev.clone();
+        newPos.x += deltaX;
+        newPos.y += deltaY;
+        return newPos;
+      });
+
+      lastPointRef.current.set(e.point.x, e.point.y);
+    }
   };
 
   const handlePointerUp = () => {
