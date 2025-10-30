@@ -9,4 +9,7 @@ export default defineConfig({
       ? "/cARds-Frontend/"
       : "/",
   plugins: [reactRouter(), tsconfigPaths()],
+  resolve: {
+    dedupe: ["three", "@react-three/fiber"],
+  },
 });
