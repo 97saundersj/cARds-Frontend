@@ -12,4 +12,8 @@ export default defineConfig({
   resolve: {
     dedupe: ["three", "@react-three/fiber"],
   },
+  server: {
+    host: true, // Listen on all network interfaces
+    port: 5173,
+  },
 });

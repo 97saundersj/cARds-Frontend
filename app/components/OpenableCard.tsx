@@ -2,6 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { Text, Html } from "@react-three/drei";
+import { useXR } from "@react-three/xr";
 
 export function OpenableCard() {
   // Scale limits
@@ -17,15 +18,20 @@ export function OpenableCard() {
   const [dragPlanePoint, setDragPlanePoint] = useState<THREE.Vector2 | null>(
     null
   );
-  const [cardPosition, setCardPosition] = useState(new THREE.Vector3(0, 1, -2));
-  const [cardScale, setCardScale] = useState(1);
+  const [cardPosition, setCardPosition] = useState(
+    new THREE.Vector3(0, 1.2, -0.8)
+  );
+  const [cardScale, setCardScale] = useState(0.5);
   const [showControls, setShowControls] = useState(true);
   const { gl, camera, raycaster } = useThree();
+  const { session } = useXR();
   const isDraggingRef = useRef(false);
   const lastPointRef = useRef(new THREE.Vector2());
   const lastPinchDistance = useRef<number | null>(null);
   const isShiftPinching = useRef(false);
   const shiftStartY = useRef<number | null>(null);
+  const xrGrabOffset = useRef<THREE.Vector3 | null>(null);
+  const xrInitialScale = useRef<number>(0.5);
 
   useEffect(() => {
     // Initialize rotation to ensure card starts closed
@@ -215,12 +221,43 @@ export function OpenableCard() {
     e.nativeEvent?.preventDefault();
     setIsDragging(false);
     isDraggingRef.current = true;
+
+    // Handle XR controller grab (VR headsets)
+    if (session && e.ray?.origin) {
+      const controllerPos = new THREE.Vector3();
+      controllerPos.copy(e.ray.origin);
+      xrGrabOffset.current = cardPosition.clone().sub(controllerPos);
+      xrInitialScale.current = cardScale;
+      return;
+    }
+
+    // Handle regular touch/mouse drag (including mobile AR)
     if (e.point) {
       lastPointRef.current.set(e.point.x, e.point.y);
       setDragPlanePoint(new THREE.Vector2(e.point.x, e.point.y));
     }
     // Reset shift pinch state
     shiftStartY.current = null;
+  };
+
+  const handlePointerMove = (e: any) => {
+    if (!isDraggingRef.current) return;
+
+    // Handle XR controller movement (VR headsets only)
+    if (session && xrGrabOffset.current && e.ray?.origin) {
+      e.stopPropagation();
+      const controllerPos = new THREE.Vector3();
+      controllerPos.copy(e.ray.origin);
+      const newPos = controllerPos.add(xrGrabOffset.current);
+      setCardPosition(newPos);
+    }
+    // Mobile AR and regular mode use the global event listeners
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+    xrGrabOffset.current = null;
+    setTimeout(() => setIsDragging(false), 100);
   };
 
   const handleDismissControls = () => {
@@ -248,50 +285,65 @@ export function OpenableCard() {
       rotation={[0, 0, 0]}
       onClick={handleClick}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
-      {/* Controls overlay */}
+      {/* Controls overlay - HTML for styling with 3D mesh for VR controller compatibility */}
       {showControls && (
-        <Html
-          position={[controlsXOffset, 0.65, 0.05]}
-          center
-          transform
-          scale={0.09}
-        >
-          <div
-            className="d-flex align-items-center justify-content-between gap-3 p-3 rounded-3 shadow text-white"
-            style={{
-              background: "rgba(0, 0, 0, 0.5)",
-              backdropFilter: "blur(10px)",
-              pointerEvents: "auto",
-              width: `${controlsWidth}px`,
-              transition: "width 0.3s ease",
-            }}
-          >
-            <div className="d-flex flex-column gap-2 flex-grow-1">
-              <div className="fw-semibold mb-1" style={{ fontSize: "15px" }}>
-                Card Controls
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <span style={{ fontSize: "16px" }}>✥</span>
-                <span className="small">Drag to move</span>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <span style={{ fontSize: "16px" }}>🔍</span>
-                <span className="small">Pinch to zoom</span>
-              </div>
-              <div className="d-flex align-items-center gap-2">
-                <span style={{ fontSize: "16px" }}>👆</span>
-                <span className="small">Double-tap to open</span>
-              </div>
-            </div>
-            <button
-              onClick={handleDismissControls}
-              className="btn btn-success text-nowrap flex-shrink-0"
+        <group position={[controlsXOffset, 0.65, 0.05]}>
+          {/* HTML overlay for nice styling */}
+          <Html center transform scale={0.09}>
+            <div
+              className="d-flex align-items-center justify-content-between gap-3 p-3 rounded-3 shadow text-white"
+              style={{
+                background: "rgba(0, 0, 0, 0.5)",
+                backdropFilter: "blur(10px)",
+                pointerEvents: "auto",
+                width: `${controlsWidth}px`,
+                transition: "width 0.3s ease",
+              }}
             >
-              Got it!
-            </button>
-          </div>
-        </Html>
+              <div className="d-flex flex-column gap-2 flex-grow-1">
+                <div className="fw-semibold mb-1" style={{ fontSize: "15px" }}>
+                  Card Controls
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ fontSize: "16px" }}>✥</span>
+                  <span className="small">Drag to move</span>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ fontSize: "16px" }}>🔍</span>
+                  <span className="small">Pinch to zoom</span>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ fontSize: "16px" }}>👆</span>
+                  <span className="small">Double-tap to open</span>
+                </div>
+              </div>
+              <button
+                onClick={handleDismissControls}
+                className="btn btn-success text-nowrap flex-shrink-0"
+              >
+                Got it!
+              </button>
+            </div>
+          </Html>
+
+          {/* Invisible 3D mesh for VR controller interaction with the "Got it" button */}
+          <mesh
+            position={[controlsWidth * 0.003, 0, 0.01]}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDismissControls();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <boxGeometry args={[0.08, 0.04, 0.01]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        </group>
       )}
 
       {/* Back cover - stays stationary */}
